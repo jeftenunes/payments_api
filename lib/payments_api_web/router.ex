@@ -9,6 +9,21 @@ defmodule PaymentsApiWeb.Router do
     pipe_through :api
   end
 
+  pipeline :graphiql do
+    plug :accepts, ["json"]
+  end
+
+  scope "/" do
+    pipe_through :api
+
+    forward "/graphiql", Absinthe.Plug.GraphiQL,
+      schema: PaymentsApiWeb.Schema,
+      # socket: GraphqlUserApiWeb.Channels.UsersSocket,
+      interface: :playground
+
+    forward "/graphql", Absinthe.Plug, schema: PaymentsApiWeb.Schema
+  end
+
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:payments_api, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put
