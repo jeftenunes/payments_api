@@ -1,0 +1,5 @@
+mix phx.gen.context Accounts User users private_key:string email:string 
+
+mix phx.gen.context Payments Transaction transactions amount:integer description:string status:string source:references:wallets
+
+mix phx.gen.context Payments Wallet wallets balance:integer currency:string  userid:references:users 

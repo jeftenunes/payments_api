@@ -3,7 +3,7 @@ defmodule PaymentsApiWeb.Schema.Types.User do
 
   object :user do
     field(:id, :id)
-    field(:key, :string)
-    field(:username, :string)
+    field(:email, :string)
+    field(:private_key, :string)
   end
 end
