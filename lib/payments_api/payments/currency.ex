@@ -219,11 +219,26 @@ defmodule PaymentsApi.Payments.Currency do
   @spec all() :: map
   def all, do: @currencies
 
-  @spec find_by(number :: integer) :: map
-  def find_by(number) when is_integer(number) do
-    Map.filter(@currencies, fn {_key, value} -> value[:number] == number end)
+  @spec find_by(currency :: atom) :: map
+  def find_by(currency) when is_atom(currency) do
+    Map.filter(@currencies, fn {key, _value} -> key === currency end)
   end
 
-  @spec supported?(currency_key: atom) :: boolean
-  def supported?(currency_key), do: Map.has_key?(@currencies, currency_key)
+  @spec is_supported?(currency_key :: atom) :: boolean
+  def is_supported?(currency_key), do: Map.has_key?(get_supported_currencies(), currency_key)
+
+  defp get_supported_currencies do
+    configured_currencies = Application.get_env(:payments_api, :supported_currencies)
+
+    are_supported_currencies_values =
+      Enum.all?(configured_currencies, fn currency ->
+        Map.has_key?(@currencies, currency)
+      end)
+
+    if not are_supported_currencies_values,
+      do: raise("Invalid currency configuration")
+
+    configured_currencies
+    |> Enum.reduce(%{}, fn curr, acc -> Map.put(acc, curr, @currencies[curr]) end)
+  end
 end

@@ -4,7 +4,7 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
   use Absinthe.Schema.Notation
 
   def create_user(%{email: email} = _params, _) do
-    Accounts.create_user(%{private_key: "bogus key", email: email})
+    Accounts.create_user(%{email: email})
   end
 
   def find_by(%{id: id} = _params, _) do

@@ -51,7 +51,7 @@ defmodule PaymentsApi.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_user(%{private_key: _private_key, email: _email} = attrs \\ %{}) do
+  def create_user(%{email: _email} = attrs \\ %{}) do
     %User{}
     |> User.changeset(attrs)
     |> Repo.insert()

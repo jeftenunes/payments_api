@@ -3,7 +3,6 @@ defmodule PaymentsApi.Repo.Migrations.CreateUsers do
 
   def change do
     create table(:users) do
-      add :private_key, :string
       add :email, :string
 
       timestamps()
