@@ -3,11 +3,12 @@ defmodule PaymentsApi.Payments do
   The Payments context.
   """
 
+  import Ecto.Query, warn: false
+
+  alias PaymentsApiWeb.Resolvers.ErrorsHelper
   alias PaymentsApi.Payments.Currencies.Currency
   alias PaymentsApi.Repo
-  alias PaymentsApi.Payments.Transaction
-
-  import Ecto.Query, warn: false
+  alias PaymentsApi.Payments.{Transaction, User}
 
   @doc """
   Returns the list of transactions.
@@ -25,18 +26,18 @@ defmodule PaymentsApi.Payments do
   @doc """
   Gets a single transaction.
 
-  Raises `Ecto.NoResultsError` if the Transaction does not exist.
+  Returns nil if the Transaction does not exist.
 
   ## Examples
 
-      iex> get_transaction!(123)
+      iex> get_transaction(123)
       %Transaction{}
 
-      iex> get_transaction!(456)
-      ** (Ecto.NoResultsError)
+      iex> get_transaction!456)
+      nil
 
   """
-  def get_transaction!(id), do: Repo.get!(Transaction, id)
+  def get_transaction(id), do: Repo.get(Transaction, id)
 
   @doc """
   Creates a transaction.
@@ -146,13 +147,18 @@ defmodule PaymentsApi.Payments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_wallet(%{currency: currency, user_id: _user_id} = attrs \\ %{}) do
-    if Currency.is_supported?(currency) do
-      build_wallet_initial_state(attrs)
-      |> Wallet.changeset(attrs)
-      |> Repo.insert()
-    else
-      {:error, ["Currency not supported"]}
+  def create_wallet(%{currency: currency, user_id: user_id} = attrs \\ %{}) do
+    case {User.exists?(user_id), Currency.is_supported?(currency)} do
+      {true, true} ->
+        build_wallet_initial_state(attrs)
+        |> Wallet.changeset(attrs)
+        |> Repo.insert()
+
+      {false, _} ->
+        ErrorsHelper.build_graphql_error(["User does not exist"])
+
+      {_, false} ->
+        ErrorsHelper.build_graphql_error(["Currency not supported"])
     end
   end
 
@@ -171,6 +177,24 @@ defmodule PaymentsApi.Payments do
   def delete_wallet(%Wallet{} = wallet) do
     Repo.delete(wallet)
   end
+
+  alias PaymentsApi.Payments.Wallet
+
+  @doc """
+  Gets a single user.
+
+  Returns nil if the Transaction does not exist.
+
+  ## Examples
+
+      iex> get_user(123)
+      %User{}
+
+      iex> get_user456)
+      nil
+
+  """
+  def user_exists(id), do: Repo.get(User, id)
 
   ## helpers
 
