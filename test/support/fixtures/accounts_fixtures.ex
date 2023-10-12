@@ -25,7 +25,7 @@ defmodule PaymentsApi.AccountsFixtures do
       |> Enum.into(%{
         balance: 42
       })
-      |> PaymentsApi.Accounts.create_wallet()
+      |> PaymentsApi.Payments.create_wallet()
 
     wallet
   end

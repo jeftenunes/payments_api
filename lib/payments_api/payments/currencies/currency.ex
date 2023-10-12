@@ -1,4 +1,4 @@
-defmodule PaymentsApi.Payments.Currency do
+defmodule PaymentsApi.Payments.Currencies.Currency do
   @currencies %{
     AED: %{name: "UAE Dirham", symbol: "د.إ", exponent: 2, number: 784},
     AFN: %{name: "Afghani", symbol: "؋", exponent: 2, number: 971},
@@ -219,13 +219,25 @@ defmodule PaymentsApi.Payments.Currency do
   @spec all() :: map
   def all, do: @currencies
 
+  @spec find_by(currency :: String.t()) :: map
+  def find_by(currency) when is_bitstring(currency) do
+    currency |> get_currency_atom() |> find_by()
+  end
+
   @spec find_by(currency :: atom) :: map
   def find_by(currency) when is_atom(currency) do
     Map.filter(@currencies, fn {key, _value} -> key === currency end)
   end
 
+  @spec is_supported?(currency :: String.t()) :: boolean
+  def is_supported?(currency) when is_bitstring(currency) do
+    currency |> get_currency_atom() |> is_supported?()
+  end
+
   @spec is_supported?(currency_key :: atom) :: boolean
-  def is_supported?(currency_key), do: Map.has_key?(get_supported_currencies(), currency_key)
+  def is_supported?(currency_key) do
+    Map.has_key?(get_supported_currencies(), currency_key)
+  end
 
   defp get_supported_currencies do
     configured_currencies = Application.get_env(:payments_api, :supported_currencies)
@@ -240,5 +252,14 @@ defmodule PaymentsApi.Payments.Currency do
 
     configured_currencies
     |> Enum.reduce(%{}, fn curr, acc -> Map.put(acc, curr, @currencies[curr]) end)
+  end
+
+  @spec get_currency_atom(currency_str :: String.t()) :: atom()
+  defp get_currency_atom(currency_str) do
+    try do
+      String.to_existing_atom(currency_str)
+    rescue
+      _e in ArgumentError -> nil
+    end
   end
 end

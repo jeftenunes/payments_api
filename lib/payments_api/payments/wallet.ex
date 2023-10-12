@@ -1,5 +1,6 @@
-defmodule PaymentsApi.Accounts.Wallet do
+defmodule PaymentsApi.Payments.Wallet do
   use Ecto.Schema
+
   import Ecto.Changeset
 
   schema "wallets" do
@@ -7,13 +8,13 @@ defmodule PaymentsApi.Accounts.Wallet do
     field :balance, :integer
     field :currency, :string
 
-    belongs_to(:user, PaymentsApi.Accounts.User)
+    belongs_to(:user, PaymentsApi.Payments.User)
     has_many(:transactions, PaymentsApi.Payments.Transaction)
 
     timestamps()
   end
 
-  @available_fields [:balance, :currency]
+  @available_fields [:userid, :balance, :currency]
 
   @doc false
   def changeset(wallet, attrs) do

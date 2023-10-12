@@ -5,8 +5,6 @@ defmodule PaymentsApi.Accounts.User do
   schema "users" do
     field :email, :string
 
-    has_many(:wallets, PaymentsApi.Accounts.Wallet)
-
     timestamps()
   end
 
