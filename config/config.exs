@@ -7,6 +7,12 @@
 # General application configuration
 import Config
 
+config :payments_api, PaymentsServer.Repo,
+  database: "payments_api_repo",
+  username: "user",
+  password: "pass",
+  hostname: "localhost"
+
 config :payments_api,
   ecto_repos: [PaymentsApi.Repo]
 
@@ -58,6 +64,8 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+config :payments_api, :supported_currencies, [:CAD, :BRL, :USD]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
