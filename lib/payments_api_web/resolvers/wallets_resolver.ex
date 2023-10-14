@@ -1,11 +1,13 @@
 defmodule PaymentsApiWeb.Resolvers.WalletsResolver do
   use Absinthe.Schema.Notation
 
-  alias PaymentsApi.Payments
+  alias PaymentsApi.Accounts
 
   def create_wallet(%{user_id: _user_id, currency: _currency} = params, _) do
-    Payments.create_wallet(params)
+    Accounts.create_wallet(params)
   end
 
-  # def find_by(%{user_id: user_id, currency: currency})
+  def find_wallets(params, _) do
+    {:ok, Accounts.list_wallets(params)}
+  end
 end

@@ -9,7 +9,7 @@ defmodule PaymentsApi.Payments.Transaction do
     field :amount, :integer
     field :description, :string
 
-    belongs_to(:wallet, PaymentsApi.Payments.Wallet)
+    belongs_to(:wallet, PaymentsApi.Accounts.Wallet)
 
     timestamps()
   end

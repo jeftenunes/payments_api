@@ -6,73 +6,76 @@ defmodule PaymentsApi.Accounts do
   import Ecto.Query, warn: false
 
   alias PaymentsApi.Repo
-  alias PaymentsApi.Accounts.User
+  alias PaymentsApi.Accounts.{User, Wallet}
+  alias PaymentsApiWeb.Resolvers.ErrorsHelper
+  alias PaymentsApi.Payments.Currencies.Currency
 
-  @doc """
-  Gets a single user.
+  def get_user(id) do
+    User.find_users(id)
+    |> Repo.all()
+    |> build_users_list()
+    |> List.first()
+  end
 
-  Returns nil if the User does not exist.
+  def user_exists(id),
+    do: User.build_exists_qry(id) |> Repo.exists?()
 
-  ## Examples
+  def list_users(params) do
+    User.find_users(params) |> Repo.all() |> build_users_list()
+  end
 
-      iex> get_user(123)
-      %User{}
-
-      iex> get_user!(456)
-      nil
-
-  """
-  def get_user(id), do: Repo.get(User, id)
-
-  @doc """
-  Creates a user.
-
-  ## Examples
-
-      iex> create_user(%{field: value})
-      {:ok, %User{}}
-
-      iex> create_user(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_user(attrs \\ %{}) do
     %User{}
     |> User.changeset(attrs)
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a user.
-
-  ## Examples
-
-      iex> update_user(user, %{field: new_value})
-      {:ok, %User{}}
-
-      iex> update_user(user, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_user(%User{} = user, attrs) do
-    user
-    |> User.changeset(attrs)
-    |> Repo.update()
+  def list_wallets(params) do
+    Wallet.build_find_wallets_by_qry(params) |> Repo.all()
   end
 
-  @doc """
-  Deletes a user.
+  def get_wallet(id), do: Repo.get!(Wallet, id)
 
-  ## Examples
+  def create_wallet(%{user_id: user_id, currency: currency} = attrs) do
+    case {user_exists(String.to_integer(user_id)), Currency.is_supported?(currency)} do
+      {true, true} ->
+        build_wallet_initial_state(attrs)
+        |> Wallet.changeset(attrs)
+        |> Repo.insert()
 
-      iex> delete_user(user)
-      {:ok, %User{}}
+      {false, _} ->
+        ErrorsHelper.build_graphql_error(["User does not exist"])
 
-      iex> delete_user(user)
-      {:error, %Ecto.Changeset{}}
+      {_, false} ->
+        ErrorsHelper.build_graphql_error(["Currency not supported"])
+    end
+  end
 
-  """
-  def delete_user(%User{} = user) do
-    Repo.delete(user)
+  ## helpers
+
+  defp build_wallet_initial_state(attrs) do
+    %Wallet{balance: 0, currency: attrs.currency, user_id: String.to_integer(attrs.user_id)}
+  end
+
+  defp build_users_list(data) do
+    wallets =
+      data
+      |> Enum.map(fn item -> item.wallet end)
+      |> Enum.filter(fn w -> w != nil end)
+
+    users =
+      data
+      |> Enum.map(fn item -> item.user end)
+      |> Enum.uniq()
+
+    IO.inspect(wallets)
+
+    Enum.map(users, fn user ->
+      Map.put(
+        user,
+        :wallets,
+        Enum.filter(wallets, fn wallet -> wallet.user_id == user.id end)
+      )
+    end)
   end
 end

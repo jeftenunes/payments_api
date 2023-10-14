@@ -5,11 +5,11 @@ defmodule PaymentsApi.Repo.Migrations.CreateWallets do
     create table(:wallets) do
       add :balance, :integer
       add :currency, :string
-      add :userid, references(:users, on_delete: :nothing)
+      add :user_id, references(:users, on_delete: :nothing)
 
       timestamps()
     end
 
-    create index(:wallets, [:userid])
+    create index(:wallets, [:user_id])
   end
 end

@@ -11,7 +11,7 @@ defmodule PaymentsApi.PaymentsFixtures do
     {:ok, wallet} =
       attrs
       |> Enum.into(%{})
-      |> PaymentsApi.Payments.create_wallet()
+      |> PaymentsApi.Accounts.create_wallet()
 
     wallet
   end

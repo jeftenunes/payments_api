@@ -14,8 +14,11 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
     end
   end
 
-  def find_by(%{id: id} = _params, _) do
-    found = Accounts.get_user(String.to_integer(id))
-    {:ok, found}
+  def all_users(_, _) do
+    {:ok, Accounts.list_users(%{})}
+  end
+
+  def find_user_by(params, _) do
+    {:ok, Accounts.get_user(String.to_integer(params.id))}
   end
 end

@@ -4,5 +4,6 @@ defmodule PaymentsApiWeb.Schema.Types.User do
   object :user do
     field :id, :id
     field :email, :string
+    field :wallets, list_of(:wallet)
   end
 end

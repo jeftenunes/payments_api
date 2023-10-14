@@ -5,10 +5,8 @@ defmodule PaymentsApi.Payments do
 
   import Ecto.Query, warn: false
 
-  alias PaymentsApiWeb.Resolvers.ErrorsHelper
-  alias PaymentsApi.Payments.Currencies.Currency
   alias PaymentsApi.Repo
-  alias PaymentsApi.Payments.{Transaction, User}
+  alias PaymentsApi.Payments.Transaction
 
   @doc """
   Returns the list of transactions.
@@ -102,103 +100,5 @@ defmodule PaymentsApi.Payments do
   """
   def change_transaction(%Transaction{} = transaction, attrs \\ %{}) do
     Transaction.changeset(transaction, attrs)
-  end
-
-  alias PaymentsApi.Payments.Wallet
-
-  @doc """
-  Returns the list of wallets.
-
-  ## Examples
-
-      iex> list_wallets()
-      [%Wallet{}, ...]
-
-  """
-  def list_wallets do
-    Repo.all(Wallet)
-  end
-
-  @doc """
-  Gets a single wallet.
-
-  returns nil if the Wallet does not exist.
-
-  ## Examples
-
-      iex> get_wallet(123)
-      %Wallet{}
-
-      iex> get_wallet(456)
-      nil
-
-  """
-  def get_wallet(id), do: Repo.get!(Wallet, id)
-
-  @doc """
-  Creates a wallet.
-
-  ## Examples
-
-      iex> create_wallet(%{field: value})
-      {:ok, %Wallet{}}
-
-      iex> create_wallet(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_wallet(%{currency: currency, user_id: user_id} = attrs \\ %{}) do
-    case {User.exists?(user_id), Currency.is_supported?(currency)} do
-      {true, true} ->
-        build_wallet_initial_state(attrs)
-        |> Wallet.changeset(attrs)
-        |> Repo.insert()
-
-      {false, _} ->
-        ErrorsHelper.build_graphql_error(["User does not exist"])
-
-      {_, false} ->
-        ErrorsHelper.build_graphql_error(["Currency not supported"])
-    end
-  end
-
-  @doc """
-  Deletes a wallet.
-
-  ## Examples
-
-      iex> delete_wallet(wallet)
-      {:ok, %Wallet{}}
-
-      iex> delete_wallet(wallet)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_wallet(%Wallet{} = wallet) do
-    Repo.delete(wallet)
-  end
-
-  alias PaymentsApi.Payments.Wallet
-
-  @doc """
-  Gets a single user.
-
-  Returns nil if the Transaction does not exist.
-
-  ## Examples
-
-      iex> get_user(123)
-      %User{}
-
-      iex> get_user456)
-      nil
-
-  """
-  def user_exists(id), do: Repo.get(User, id)
-
-  ## helpers
-
-  defp build_wallet_initial_state(attrs) do
-    %Wallet{balance: 0, currency: attrs.currency, userid: String.to_integer(attrs.user_id)}
   end
 end
