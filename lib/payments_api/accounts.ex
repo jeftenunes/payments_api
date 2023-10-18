@@ -68,8 +68,6 @@ defmodule PaymentsApi.Accounts do
       |> Enum.map(fn item -> item.user end)
       |> Enum.uniq()
 
-    IO.inspect(wallets)
-
     Enum.map(users, fn user ->
       Map.put(
         user,
