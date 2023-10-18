@@ -1,2 +1,0 @@
-defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitor do
-end

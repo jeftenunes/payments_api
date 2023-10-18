@@ -66,6 +66,7 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 
 config :payments_api,
+  exchange_rate_cache_expiration: 1,
   supported_currencies: [:CAD, :BRL, :USD],
   alpha_vantage_api_key: "SWV5BYTB8NODLZP8",
   alpha_vantage_api_url: "http://localhost:4001/query"
