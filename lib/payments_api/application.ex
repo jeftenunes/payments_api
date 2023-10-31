@@ -17,7 +17,8 @@ defmodule PaymentsApi.Application do
       # Start Finch
       {Finch, name: PaymentsApi.Finch},
       # Start the Endpoint (http/https)
-      PaymentsApiWeb.Endpoint
+      PaymentsApiWeb.Endpoint,
+      PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
       # Start a worker by calling: PaymentsApi.Worker.start_link(arg)
       # {PaymentsApi.Worker, arg}
     ]

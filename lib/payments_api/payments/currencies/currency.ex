@@ -1,4 +1,6 @@
 defmodule PaymentsApi.Payments.Currencies.Currency do
+  alias PaymentsApi.Payments.Currencies.ApiWrapper
+
   @currencies %{
     AED: %{name: "UAE Dirham", symbol: "د.إ", exponent: 2, number: 784},
     AFN: %{name: "Afghani", symbol: "؋", exponent: 2, number: 971},
@@ -216,6 +218,8 @@ defmodule PaymentsApi.Payments.Currencies.Currency do
     ZWL: %{name: "Zimbabwe Dollar", symbol: "$", exponent: 2, number: 932}
   }
 
+  @supported_currencies Application.compile_env(:payments_api, :supported_currencies)
+
   @spec all() :: map
   def all, do: @currencies
 
@@ -239,27 +243,33 @@ defmodule PaymentsApi.Payments.Currencies.Currency do
     Map.has_key?(get_supported_currencies(), currency_key)
   end
 
-  defp get_supported_currencies do
-    configured_currencies = Application.get_env(:payments_api, :supported_currencies)
+  @spec fetch_exchange_rate_from_api(from_currency :: String.t(), to_currency :: String.t()) ::
+          map()
+  def fetch_exchange_rate_from_api(from_currency, to_currency) do
+    with response <- ApiWrapper.fetch(%{from_currency: from_currency, to_currency: to_currency}) do
+      response
+    end
+  end
 
+  @spec get_currency_atom(currency_str :: String.t()) :: atom()
+  def get_currency_atom(currency_str) do
+    try do
+      String.to_existing_atom(currency_str)
+    rescue
+      _e in ArgumentError -> nil
+    end
+  end
+
+  defp get_supported_currencies do
     are_supported_currencies_values =
-      Enum.all?(configured_currencies, fn currency ->
+      Enum.all?(@supported_currencies, fn currency ->
         Map.has_key?(@currencies, currency)
       end)
 
     if not are_supported_currencies_values,
       do: raise("Invalid currency configuration")
 
-    configured_currencies
+    @supported_currencies
     |> Enum.reduce(%{}, fn curr, acc -> Map.put(acc, curr, @currencies[curr]) end)
-  end
-
-  @spec get_currency_atom(currency_str :: String.t()) :: atom()
-  defp get_currency_atom(currency_str) do
-    try do
-      String.to_existing_atom(currency_str)
-    rescue
-      _e in ArgumentError -> nil
-    end
   end
 end
