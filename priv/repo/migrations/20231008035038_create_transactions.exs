@@ -6,6 +6,7 @@ defmodule PaymentsApi.Repo.Migrations.CreateTransactions do
       add :status, :string
       add :amount, :integer
       add :description, :string
+      add :exchange_rate, :integer
       add :source, references(:wallets, on_delete: :nothing)
       add :recipient, references(:wallets, on_delete: :nothing)
 

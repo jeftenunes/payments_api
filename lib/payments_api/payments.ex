@@ -5,9 +5,9 @@ defmodule PaymentsApi.Payments do
 
   import Ecto.Query, warn: false
 
-  alias PaymentsApiWeb.Resolvers.ErrorsHelper
   alias PaymentsApi.Repo
-  alias PaymentsApi.Payments.Transaction
+  alias PaymentsApiWeb.Resolvers.ErrorsHelper
+  alias PaymentsApi.Payments.{Currencies.Currency, User, Wallet, Transaction}
 
   @doc """
   Returns the list of transactions.
@@ -53,96 +53,121 @@ defmodule PaymentsApi.Payments do
   def create_transaction(
         %{
           amount: _amount,
-          description: _description,
-          sender_wallet_id: _sender_wallet_id,
-          recipient_wallet_id: _recipient_wallet_id
+          source: _source,
+          recipient: _recipient,
+          description: _description
         } = attrs
       ) do
-    with true <- is_transaction_amount_format_valid?(attrs) do
-      initial_transaction_state = build_initial_transaction_state(attrs)
-
+    ## buscar as carteiras e a rate
+    with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs) do
       %Transaction{}
       |> Transaction.changeset(initial_transaction_state)
       |> Repo.insert()
     else
-      false ->
-        ErrorsHelper.build_graphql_error(["transaction amount bad formatted. Expecting 11,22"])
+      {:error, errors} -> {:error, errors}
     end
   end
 
-  @doc """
-  Updates a transaction.
-
-  ## Examples
-
-      iex> update_transaction(transaction, %{field: new_value})
-      {:ok, %Transaction{}}
-
-      iex> update_transaction(transaction, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_transaction(%Transaction{} = transaction, attrs) do
-    transaction
-    |> Transaction.changeset(attrs)
-    |> Repo.update()
+  def get_user(id) do
+    User.find_users(id)
+    |> Repo.all()
+    |> build_users_list()
+    |> List.first()
   end
 
-  @doc """
-  Deletes a transaction.
+  def user_exists(id),
+    do: User.build_exists_qry(id) |> Repo.exists?()
 
-  ## Examples
-
-      iex> delete_transaction(transaction)
-      {:ok, %Transaction{}}
-
-      iex> delete_transaction(transaction)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_transaction(%Transaction{} = transaction) do
-    Repo.delete(transaction)
+  def list_users(params) do
+    User.find_users(params) |> Repo.all() |> build_users_list()
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking transaction changes.
+  def create_user(attrs \\ %{}) do
+    %User{}
+    |> User.changeset(attrs)
+    |> Repo.insert()
+  end
 
-  ## Examples
+  def list_wallets(params) do
+    Wallet.build_find_wallets_by_qry(params) |> Repo.all()
+  end
 
-      iex> change_transaction(transaction)
-      %Ecto.Changeset{data: %Transaction{}}
+  def get_wallet(id), do: Repo.get!(Wallet, id)
 
-  """
-  def change_transaction(%Transaction{} = transaction, attrs \\ %{}) do
-    Transaction.changeset(transaction, attrs)
+  def create_wallet(%{user_id: user_id, currency: currency} = attrs) do
+    case {user_exists(String.to_integer(user_id)), Currency.is_supported?(currency)} do
+      {true, true} ->
+        build_wallet_initial_state(attrs)
+        |> Wallet.changeset(attrs)
+        |> Repo.insert()
+
+      {false, _} ->
+        ErrorsHelper.build_graphql_error(["User does not exist"])
+
+      {_, false} ->
+        ErrorsHelper.build_graphql_error(["Currency not supported"])
+    end
+  end
+
+  ## helpers
+
+  defp build_wallet_initial_state(attrs) do
+    %Wallet{balance: 0, currency: attrs.currency, user_id: String.to_integer(attrs.user_id)}
+  end
+
+  defp build_users_list(data) do
+    wallets =
+      data
+      |> Enum.map(fn item -> item.wallet end)
+      |> Enum.filter(fn w -> w != nil end)
+
+    users =
+      data
+      |> Enum.map(fn item -> item.user end)
+      |> Enum.uniq()
+
+    Enum.map(users, fn user ->
+      Map.put(
+        user,
+        :wallets,
+        Enum.filter(wallets, fn wallet -> wallet.user_id == user.id end)
+      )
+    end)
   end
 
   defp build_initial_transaction_state(%{
          amount: amount,
-         description: description,
-         sender_wallet_id: sender_wallet_id,
-         recipient_wallet_id: recipient_wallet_id
+         source: source,
+         recipient: recipient,
+         description: description
        }) do
-    %{
-      status: "PENDING",
-      amount: 0,
-      description: description,
-      source: String.to_integer(sender_wallet_id),
-      recipient: String.to_integer(recipient_wallet_id)
-    }
+    case is_transaction_amount_format_valid?(amount) do
+      true ->
+        {:ok,
+         %{
+           status: "PENDING",
+           description: description,
+           amount: parse_amount(amount),
+           source: String.to_integer(source),
+           recipient: String.to_integer(recipient)
+         }}
+
+      false ->
+        ErrorsHelper.build_graphql_error(["transaction amount bad formatted. Expecting 111,11"])
+    end
   end
 
-  defp is_transaction_amount_format_valid?(%{
-         amount: amount,
-         description: _description,
-         sender_wallet_id: _sender_wallet_id,
-         recipient_wallet_id: _recipient_wallet_id
-       }) do
-    String.match?(amount, ~r/^\d{2},\d{2}$/)
+  defp is_transaction_amount_format_valid?(amount) do
+    String.match?(amount, ~r/^\d+,\d{2}$/)
   end
 
   defp parse_amount(transaction_amount) do
     String.replace(transaction_amount, ",", "")
+    |> String.to_integer()
+  end
+
+  defp parse_exchange_rate(exchange_rate) do
+    String.replace(exchange_rate, ".", "")
     |> String.to_integer()
   end
 end

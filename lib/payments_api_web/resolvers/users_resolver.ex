@@ -1,11 +1,11 @@
 defmodule PaymentsApiWeb.Resolvers.UsersResolver do
   use Absinthe.Schema.Notation
 
-  alias PaymentsApi.Accounts
+  alias PaymentsApi.Payments
   alias PaymentsApiWeb.Resolvers.ErrorsHelper
 
   def create_user(%{email: _email} = params, _) do
-    case Accounts.create_user(params) do
+    case Payments.create_user(params) do
       {:ok, usr} ->
         {:ok, usr}
 
@@ -15,10 +15,10 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
   end
 
   def all_users(_, _) do
-    {:ok, Accounts.list_users(%{})}
+    {:ok, Payments.list_users(%{})}
   end
 
   def find_user_by(params, _) do
-    {:ok, Accounts.get_user(String.to_integer(params.id))}
+    {:ok, Payments.get_user(String.to_integer(params.id))}
   end
 end

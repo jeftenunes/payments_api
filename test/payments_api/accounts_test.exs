@@ -4,7 +4,7 @@ defmodule PaymentsApi.AccountsTest do
   alias PaymentsApi.Accounts
 
   describe "users" do
-    alias PaymentsApi.Accounts.User
+    alias PaymentsApi.Payments.User
 
     import PaymentsApi.AccountsFixtures
 

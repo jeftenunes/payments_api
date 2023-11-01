@@ -4,7 +4,7 @@ defmodule PaymentsApi.PaymentsTest do
   alias PaymentsApi.Payments
 
   describe "wallets" do
-    alias PaymentsApi.Accounts.Wallet
+    alias PaymentsApi.Payments.Wallet
 
     import PaymentsApi.PaymentsFixtures
 

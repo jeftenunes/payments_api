@@ -4,8 +4,10 @@ defmodule PaymentsApiWeb.Schema.Types.Transaction do
   object :transaction do
     field :id, :id
     field :source, :id
+    field :recipient, :id
     field :status, :string
-    field :amount, :integer
+    field :amount, :string
     field :description, :string
+    field :exchange_rate, :string
   end
 end
