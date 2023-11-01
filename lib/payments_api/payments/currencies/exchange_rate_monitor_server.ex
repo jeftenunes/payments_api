@@ -32,10 +32,7 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   ## server callbacks
 
   @impl true
-  def init(_) do
-    ratings_table = :ets.new(@default_name, [:named_table, read_concurrency: true])
-    state = %{ratings: ratings_table}
-
+  def init(state) do
     {:ok, state, {:continue, :start}}
   end
 

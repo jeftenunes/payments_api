@@ -9,6 +9,9 @@ defmodule PaymentsApiWeb.Schema do
   import_types(PaymentsApiWeb.Schema.Queries.Wallets)
   import_types(PaymentsApiWeb.Schema.Mutations.Wallets)
 
+  import_types(PaymentsApiWeb.Schema.Types.Transaction)
+  import_types(PaymentsApiWeb.Schema.Mutations.Transactions)
+
   @desc "Queries resources"
   query do
     import_fields(:users_queries)
@@ -19,5 +22,6 @@ defmodule PaymentsApiWeb.Schema do
   mutation do
     import_fields(:users_mutations)
     import_fields(:wallets_mutations)
+    import_fields(:transactions_mutations)
   end
 end
