@@ -5,6 +5,7 @@ defmodule PaymentsApi.Payments do
 
   import Ecto.Query, warn: false
 
+  alias PaymentsApiWeb.Resolvers.ErrorsHelper
   alias PaymentsApi.Repo
   alias PaymentsApi.Payments.Transaction
 
@@ -49,10 +50,24 @@ defmodule PaymentsApi.Payments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_transaction(attrs \\ %{}) do
-    %Transaction{}
-    |> Transaction.changeset(attrs)
-    |> Repo.insert()
+  def create_transaction(
+        %{
+          amount: _amount,
+          description: _description,
+          sender_wallet_id: _sender_wallet_id,
+          recipient_wallet_id: _recipient_wallet_id
+        } = attrs
+      ) do
+    with true <- is_transaction_amount_format_valid?(attrs) do
+      initial_transaction_state = build_initial_transaction_state(attrs)
+
+      %Transaction{}
+      |> Transaction.changeset(initial_transaction_state)
+      |> Repo.insert()
+    else
+      false ->
+        ErrorsHelper.build_graphql_error(["transaction amount bad formatted. Expecting 11,22"])
+    end
   end
 
   @doc """
@@ -100,5 +115,34 @@ defmodule PaymentsApi.Payments do
   """
   def change_transaction(%Transaction{} = transaction, attrs \\ %{}) do
     Transaction.changeset(transaction, attrs)
+  end
+
+  defp build_initial_transaction_state(%{
+         amount: amount,
+         description: description,
+         sender_wallet_id: sender_wallet_id,
+         recipient_wallet_id: recipient_wallet_id
+       }) do
+    %{
+      status: "PENDING",
+      amount: 0,
+      description: description,
+      source: String.to_integer(sender_wallet_id),
+      recipient: String.to_integer(recipient_wallet_id)
+    }
+  end
+
+  defp is_transaction_amount_format_valid?(%{
+         amount: amount,
+         description: _description,
+         sender_wallet_id: _sender_wallet_id,
+         recipient_wallet_id: _recipient_wallet_id
+       }) do
+    String.match?(amount, ~r/^\d{2},\d{2}$/)
+  end
+
+  defp parse_amount(transaction_amount) do
+    String.replace(transaction_amount, ",", "")
+    |> String.to_integer()
   end
 end

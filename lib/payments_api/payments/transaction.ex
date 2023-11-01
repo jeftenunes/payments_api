@@ -5,21 +5,21 @@ defmodule PaymentsApi.Payments.Transaction do
 
   schema "transactions" do
     field :source, :id
+    field :recipient, :id
     field :status, :string
     field :amount, :integer
     field :description, :string
 
-    belongs_to(:wallet, PaymentsApi.Accounts.Wallet)
-
     timestamps()
   end
 
-  @available_fields [:amount, :description, :status]
+  @required_fields [:amount, :source, :recipient, :status]
+  @available_fields [:amount, :source, :recipient, :description, :status]
 
   @doc false
   def changeset(transaction, attrs) do
     transaction
     |> cast(attrs, @available_fields)
-    |> validate_required(@available_fields)
+    |> validate_required(@required_fields)
   end
 end

@@ -65,7 +65,11 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :payments_api, :supported_currencies, [:CAD, :BRL, :USD]
+config :payments_api,
+  exchange_rate_cache_expiration_in_seconds: 2,
+  supported_currencies: [:CAD, :BRL, :USD],
+  alpha_vantage_api_key: "SWV5BYTB8NODLZP8",
+  alpha_vantage_api_url: "http://localhost:4001/query"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
