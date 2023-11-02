@@ -205,10 +205,6 @@ defmodule PaymentsApi.Payments do
     |> String.to_integer()
   end
 
-  defp map_to_graphql_type({:error, changeset}) do
-    ErrorsHelper.traverse_errors(changeset)
-  end
-
   defp map_to_graphql_type({
          {:ok, transaction} = _op_result,
          %{source: source, recipient: recipient} = _metadata,
