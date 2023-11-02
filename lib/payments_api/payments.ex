@@ -7,7 +7,15 @@ defmodule PaymentsApi.Payments do
 
   alias PaymentsApi.Repo
   alias PaymentsApiWeb.Resolvers.ErrorsHelper
-  alias PaymentsApi.Payments.{Currencies.Currency, User, Wallet, Transaction}
+  alias PaymentsApi.Payments.TransactionMetadata
+
+  alias PaymentsApi.Payments.{
+    User,
+    Wallet,
+    Transaction,
+    Currencies.Currency,
+    Currencies.ExchangeRateMonitorServer
+  }
 
   @doc """
   Returns the list of transactions.
@@ -52,19 +60,35 @@ defmodule PaymentsApi.Payments do
   """
   def create_transaction(
         %{
+          source: source,
           amount: _amount,
-          source: _source,
-          recipient: _recipient,
+          recipient: recipient,
           description: _description
         } = attrs
       ) do
     ## buscar as carteiras e a rate
-    with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs) do
-      %Transaction{}
-      |> Transaction.changeset(initial_transaction_state)
-      |> Repo.insert()
+    source_id = String.to_integer(source)
+    recipient_id = String.to_integer(recipient)
+
+    with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs),
+         %{source: source, recipient: recipient} = metadata <-
+           retrieve_transaction_metadata(source_id, recipient_id) do
+      op_result =
+        %Transaction{}
+        |> Transaction.changeset(initial_transaction_state)
+        |> Repo.insert()
+
+      rate_exchange = retrieve_exchange_rate(source.currency, recipient.currency)
+
+      map_to_graphql_type({op_result, metadata, rate_exchange})
     else
-      {:error, errors} -> {:error, errors}
+      {:error, errors} ->
+        {:error, errors}
+
+      nil ->
+        ErrorsHelper.build_graphql_error([
+          "source or recipient wallet does not exist"
+        ])
     end
   end
 
@@ -157,6 +181,16 @@ defmodule PaymentsApi.Payments do
     end
   end
 
+  defp retrieve_transaction_metadata(source_id, recipient_id) do
+    TransactionMetadata.build_fetch_wallets_qry(source_id, recipient_id)
+    |> Repo.one()
+  end
+
+  defp retrieve_exchange_rate(from_currency, to_currency) do
+    # buscar rate no genserver
+    nil
+  end
+
   defp is_transaction_amount_format_valid?(amount) do
     String.match?(amount, ~r/^\d+,\d{2}$/)
   end
@@ -169,5 +203,28 @@ defmodule PaymentsApi.Payments do
   defp parse_exchange_rate(exchange_rate) do
     String.replace(exchange_rate, ".", "")
     |> String.to_integer()
+  end
+
+  defp map_to_graphql_type({:error, changeset}) do
+    ErrorsHelper.traverse_errors(changeset)
+  end
+
+  defp map_to_graphql_type({
+         {:ok, transaction} = _op_result,
+         %{source: source, recipient: recipient} = _metadata,
+         rate_exchange
+       }) do
+    {:ok,
+     %{
+       source: source.id,
+       id: transaction.id,
+       recipient: recipient.id,
+       status: transaction.status,
+       amount: transaction.amount,
+       from_currency: source.currency,
+       to_currency: recipient.currency,
+       description: transaction.description,
+       exchange_rate: "mock"
+     }}
   end
 end

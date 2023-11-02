@@ -30,10 +30,4 @@ defmodule PaymentsApi.Payments.Wallet do
       where(q, [w], field(w, ^field) == ^val)
     end)
   end
-
-  # def find_credit_and_debit_wallets(source_id, recipient_id) do
-  #   qry = from(credit in Wallet,
-  #     join: debit in Wallet,
-  #     on: )
-  # end
 end

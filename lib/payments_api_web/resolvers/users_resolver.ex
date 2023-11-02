@@ -9,6 +9,9 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
       {:ok, usr} ->
         {:ok, usr}
 
+      {:error, errors} when is_list(errors) ->
+        {:error, errors}
+
       {:error, changeset} ->
         {:error, ErrorsHelper.traverse_errors(changeset)}
     end

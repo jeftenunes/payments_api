@@ -25,8 +25,12 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
     GenServer.start_link(__MODULE__, %{}, name: @default_name)
   end
 
-  def get_rate_for_currency(currency) do
-    GenServer.call(@default_name, {:get_rate_for_currency, currency})
+  defp fetch_rate_for_currency(from_currency, to_currencies) do
+    ratings_for_currency =
+      to_currencies
+      |> Enum.map(&Currency.fetch_exchange_rate_from_api(from_currency, &1))
+
+    {from_currency, ratings_for_currency}
   end
 
   ## server callbacks
@@ -69,13 +73,5 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
       |> Map.get(currency)
 
     {:reply, rate_for_currency, state}
-  end
-
-  defp fetch_rate_for_currency(from_currency, to_currencies) do
-    ratings_for_currency =
-      to_currencies
-      |> Enum.map(&Currency.fetch_exchange_rate_from_api(from_currency, &1))
-
-    {from_currency, ratings_for_currency}
   end
 end
