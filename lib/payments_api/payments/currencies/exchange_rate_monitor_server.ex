@@ -25,12 +25,8 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
     GenServer.start_link(__MODULE__, %{}, name: @default_name)
   end
 
-  defp fetch_rate_for_currency(from_currency, to_currencies) do
-    ratings_for_currency =
-      to_currencies
-      |> Enum.map(&Currency.fetch_exchange_rate_from_api(from_currency, &1))
-
-    {from_currency, ratings_for_currency}
+  def get_rate_for_currency(from_currency, to_currency) do
+    GenServer.call(@default_name, {:get_exchange_rate, from_currency, to_currency})
   end
 
   ## server callbacks
@@ -61,17 +57,26 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
 
     state = Map.put(state, :exchange_rates, exchange_rates)
 
-    # IO.inspect(exchange_rates)
-
     {:noreply, state}
   end
 
   @impl true
-  def handle_call({:get_rate_for_currency, currency}, _from, state) do
-    rate_for_currency =
-      Map.get(state, :exchange_rates)
-      |> Map.get(currency)
+  def handle_call({:get_exchange_rate, from_currency, to_currency}, _from, state) do
+    exchange_rate =
+      Map.get(state, :exchange_rates)[Currency.get_currency_atom(from_currency)]
+      |> Enum.filter(fn currency_rate -> currency_rate.to_currency == to_currency end)
+      |> List.first()
 
-    {:reply, rate_for_currency, state}
+    {:reply, exchange_rate, state}
+  end
+
+  ## helpers
+
+  defp fetch_rate_for_currency(from_currency, to_currencies) do
+    ratings_for_currency =
+      to_currencies
+      |> Enum.map(&Currency.fetch_exchange_rate_from_api(from_currency, &1))
+
+    {from_currency, ratings_for_currency}
   end
 end

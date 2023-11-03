@@ -8,6 +8,7 @@ defmodule PaymentsApi.Payments do
   alias PaymentsApi.Repo
   alias PaymentsApiWeb.Resolvers.ErrorsHelper
   alias PaymentsApi.Payments.TransactionMetadata
+  alias PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
 
   alias PaymentsApi.Payments.{
     User,
@@ -78,9 +79,9 @@ defmodule PaymentsApi.Payments do
         |> Transaction.changeset(initial_transaction_state)
         |> Repo.insert()
 
-      rate_exchange = retrieve_exchange_rate(source.currency, recipient.currency)
+      exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
 
-      map_to_graphql_type({op_result, metadata, rate_exchange})
+      map_to_graphql_type({op_result, metadata, exchange_rate})
     else
       {:error, errors} ->
         {:error, errors}
@@ -187,8 +188,8 @@ defmodule PaymentsApi.Payments do
   end
 
   defp retrieve_exchange_rate(from_currency, to_currency) do
-    # buscar rate no genserver
-    nil
+    exchange_rate = ExchangeRateMonitorServer.get_rate_for_currency(from_currency, to_currency)
+    exchange_rate
   end
 
   defp is_transaction_amount_format_valid?(amount) do
@@ -208,7 +209,7 @@ defmodule PaymentsApi.Payments do
   defp map_to_graphql_type({
          {:ok, transaction} = _op_result,
          %{source: source, recipient: recipient} = _metadata,
-         rate_exchange
+         exchange_rate
        }) do
     {:ok,
      %{
@@ -220,7 +221,7 @@ defmodule PaymentsApi.Payments do
        from_currency: source.currency,
        to_currency: recipient.currency,
        description: transaction.description,
-       exchange_rate: "mock"
+       exchange_rate: parse_exchange_rate(exchange_rate.exchange_rate)
      }}
   end
 end
