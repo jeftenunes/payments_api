@@ -74,14 +74,21 @@ defmodule PaymentsApi.Payments do
     with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs),
          %{source: source, recipient: recipient} = metadata <-
            retrieve_transaction_metadata(source_id, recipient_id) do
+      exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
+
+      initial_transaction_state =
+        Map.put(
+          initial_transaction_state,
+          :exchange_rate,
+          parse_exchange_rate(exchange_rate.exchange_rate)
+        )
+
       op_result =
         %Transaction{}
         |> Transaction.changeset(initial_transaction_state)
         |> Repo.insert()
 
-      exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
-
-      map_to_graphql_type({op_result, metadata, exchange_rate})
+      map_to_graphql_type({op_result, metadata})
     else
       {:error, errors} ->
         {:error, errors}
@@ -134,15 +141,15 @@ defmodule PaymentsApi.Payments do
     end
   end
 
-  def enqueue_pending_transactions() do
-    Transaction.find_pending_transactions()
-    |> Repo.update_all(set: [status: "PROCESSING"])
-  end
-
   def update_transaction_status(transaction, new_status) do
     transaction
     |> Transaction.changeset(%{status: new_status})
     |> Repo.update()
+  end
+
+  def retrieve_transactions_to_process() do
+    Transaction.build_retrieve_transactions_to_process_query()
+    |> Repo.all()
   end
 
   ## helpers
@@ -219,8 +226,7 @@ defmodule PaymentsApi.Payments do
 
   defp map_to_graphql_type({
          {:ok, transaction} = _op_result,
-         %{source: source, recipient: recipient} = _metadata,
-         exchange_rate
+         %{source: source, recipient: recipient} = _metadata
        }) do
     {:ok,
      %{
@@ -232,7 +238,7 @@ defmodule PaymentsApi.Payments do
        from_currency: source.currency,
        to_currency: recipient.currency,
        description: transaction.description,
-       exchange_rate: parse_exchange_rate(exchange_rate.exchange_rate)
+       exchange_rate: transaction.exchange_rate
      }}
   end
 end

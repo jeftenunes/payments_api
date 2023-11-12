@@ -27,8 +27,7 @@ defmodule PaymentsApi.Payments.PaymentProcessingServer do
 
   @impl true
   def handle_info(:process_pending_transactions, state) do
-    transactions_to_process = Payments.enqueue_pending_transactions()
-    IO.inspect(transactions_to_process)
+    transactions = Payments.retrieve_transactions_to_process()
 
     {:noreply, state}
   end

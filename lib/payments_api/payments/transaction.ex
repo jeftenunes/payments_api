@@ -12,12 +12,13 @@ defmodule PaymentsApi.Payments.Transaction do
     field :status, :string
     field :amount, :integer
     field :description, :string
+    field :exchange_rate, :integer
 
     timestamps()
   end
 
-  @required_fields [:amount, :source, :recipient, :status]
-  @available_fields [:amount, :source, :recipient, :description, :status]
+  @required_fields [:amount, :source, :recipient, :status, :exchange_rate]
+  @available_fields [:amount, :source, :recipient, :description, :status, :exchange_rate]
 
   @doc false
   def changeset(transaction, attrs) do
@@ -26,10 +27,11 @@ defmodule PaymentsApi.Payments.Transaction do
     |> validate_required(@required_fields)
   end
 
-  def find_pending_transactions do
+  def build_retrieve_transactions_to_process_query() do
     from(
       t in Transaction,
-      where: t.status == "PENDING"
+      where: t.status == "PENDING",
+      limit: 100
     )
   end
 end
