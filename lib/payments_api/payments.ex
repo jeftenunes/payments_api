@@ -134,6 +134,17 @@ defmodule PaymentsApi.Payments do
     end
   end
 
+  def enqueue_pending_transactions() do
+    Transaction.find_pending_transactions()
+    |> Repo.update_all(set: [status: "PROCESSING"])
+  end
+
+  def update_transaction_status(transaction, new_status) do
+    transaction
+    |> Transaction.changeset(%{status: new_status})
+    |> Repo.update()
+  end
+
   ## helpers
 
   defp build_wallet_initial_state(attrs) do
