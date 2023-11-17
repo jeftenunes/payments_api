@@ -34,4 +34,12 @@ defmodule PaymentsApi.Payments.Transaction do
       limit: 100
     )
   end
+
+  def find_transaction_history_for_wallet(wallet_id) do
+    from(t in Transaction)
+    |> where([t], field(t, :source) == ^wallet_id)
+    |> or_where([t], field(t, :recipient) == ^wallet_id)
+
+    # NOT GONNA PAGINATE, IN A REAL APP, IT'D BE NEEDED
+  end
 end

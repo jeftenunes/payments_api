@@ -27,7 +27,9 @@ defmodule PaymentsApi.Payments.PaymentProcessingServer do
 
   @impl true
   def handle_info(:process_pending_transactions, state) do
-    transactions = Payments.retrieve_transactions_to_process()
+    IO.inspect("ENTRA")
+
+    Payments.process_transaction()
 
     {:noreply, state}
   end

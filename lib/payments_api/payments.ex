@@ -5,6 +5,7 @@ defmodule PaymentsApi.Payments do
 
   import Ecto.Query, warn: false
 
+  alias PaymentsApi.Payments.TransactionValidator
   alias PaymentsApi.Repo
   alias PaymentsApiWeb.Resolvers.ErrorsHelper
   alias PaymentsApi.Payments.TransactionMetadata
@@ -88,7 +89,7 @@ defmodule PaymentsApi.Payments do
         |> Transaction.changeset(initial_transaction_state)
         |> Repo.insert()
 
-      map_to_graphql_type({op_result, metadata})
+      map_graphql_response({op_result, metadata})
     else
       {:error, errors} ->
         {:error, errors}
@@ -152,8 +153,38 @@ defmodule PaymentsApi.Payments do
     |> Repo.all()
   end
 
-  ## helpers
+  def process_transaction() do
+    validation_results =
+      retrieve_transactions_to_process()
+      |> Enum.map(&TransactionValidator.validate_transaction(&1))
 
+    IO.inspect(validation_results)
+
+    # validations_result = TransactionValidator.validate_transaction(pending_transaction)
+    # IO.inspect(validations_result)
+    # validations_result
+
+    # transactions =
+    #   Transaction.find_transaction_history_for_wallet(transaction.source)
+    #   |> Repo.all()
+
+    # case TransactionValidator.validate_pending_transactions(transactions) do
+    #   {:valid, validation_results} ->
+    #     Enum.each(validation_results, &update_transaction_status(&1.transaction, "PROCESSED"))
+    #     :ok
+
+    #   {:invalid, validation_results} ->
+    #     Enum.each(validation_results, fn result ->
+    #       IO.inspect(
+    #         "Transaction rejected: #{result.transaction.id}, reason: #{Enum.join(result.errors, " | ")}"
+    #       )
+
+    #       :error
+    #     end)
+    # end
+  end
+
+  ## helpers
   defp build_wallet_initial_state(attrs) do
     %Wallet{balance: 0, currency: attrs.currency, user_id: String.to_integer(attrs.user_id)}
   end
@@ -184,19 +215,19 @@ defmodule PaymentsApi.Payments do
          recipient: recipient,
          description: description
        }) do
-    case is_transaction_amount_format_valid?(amount) do
-      true ->
+    case maybe_parse_amount(amount) do
+      {:valid, parsed_amount} ->
         {:ok,
          %{
            status: "PENDING",
+           amount: parsed_amount,
            description: description,
-           amount: parse_amount(amount),
            source: String.to_integer(source),
            recipient: String.to_integer(recipient)
          }}
 
-      false ->
-        ErrorsHelper.build_graphql_error(["transaction amount bad formatted. Expecting 111,11"])
+      {:invalid, _} ->
+        ErrorsHelper.build_graphql_error(["transaction amount bad formatted."])
     end
   end
 
@@ -210,13 +241,20 @@ defmodule PaymentsApi.Payments do
     exchange_rate
   end
 
-  defp is_transaction_amount_format_valid?(amount) do
-    String.match?(amount, ~r/^\d+,\d{2}$/)
-  end
+  defp maybe_parse_amount(transaction_amount) do
+    cond do
+      String.match?(transaction_amount, ~r/^\d+,\d{2}$/) ->
+        {:valid, String.replace(transaction_amount, ",", "") |> String.to_integer()}
 
-  defp parse_amount(transaction_amount) do
-    String.replace(transaction_amount, ",", "")
-    |> String.to_integer()
+      String.match?(transaction_amount, ~r/^\d+.\d{2}$/) ->
+        {:valid, String.replace(transaction_amount, ".", "") |> String.to_integer()}
+
+      String.match?(transaction_amount, ~r/^\d+/) ->
+        {:valid, transaction_amount |> String.to_integer()}
+
+      true ->
+        {:invalid, nil}
+    end
   end
 
   defp parse_exchange_rate(exchange_rate) do
@@ -224,7 +262,7 @@ defmodule PaymentsApi.Payments do
     |> String.to_integer()
   end
 
-  defp map_to_graphql_type({
+  defp map_graphql_response({
          {:ok, transaction} = _op_result,
          %{source: source, recipient: recipient} = _metadata
        }) do
