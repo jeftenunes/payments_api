@@ -154,11 +154,15 @@ defmodule PaymentsApi.Payments do
   end
 
   def process_transaction() do
-    validation_results =
-      retrieve_transactions_to_process()
-      |> Enum.map(&TransactionValidator.validate_transaction(&1))
-
-    IO.inspect(validation_results)
+    retrieve_transactions_to_process()
+    |> Enum.map(&TransactionValidator.validate_transaction(&1))
+    |> Enum.each(fn validation_result ->
+      case validation_result do
+        {:valid, transaction} -> update_transaction_status(transaction, "PROCESSED")
+        # log transaction failures
+        {:invalid, _error, transaction} -> update_transaction_status(transaction, "REFUSED")
+      end
+    end)
 
     # validations_result = TransactionValidator.validate_transaction(pending_transaction)
     # IO.inspect(validations_result)
