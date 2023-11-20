@@ -5,31 +5,18 @@ defmodule PaymentsApi.Payments do
 
   import Ecto.Query, warn: false
 
+  alias PaymentsApi.Payments.TransactionValidator
   alias PaymentsApi.Repo
-  alias PaymentsApiWeb.Resolvers.ErrorsHelper
-  alias PaymentsApi.Payments.TransactionMetadata
-  alias PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
 
   alias PaymentsApi.Payments.{
     User,
     Wallet,
     Transaction,
+    ExchangeRate,
+    TransactionMetadata,
     Currencies.Currency,
-    Currencies.ExchangeRateMonitorServer
+    TransactionValidator
   }
-
-  @doc """
-  Returns the list of transactions.
-
-  ## Examples
-
-      iex> list_transactions()
-      [%Transaction{}, ...]
-
-  """
-  def list_transactions do
-    Repo.all(Transaction)
-  end
 
   @doc """
   Gets a single transaction.
@@ -59,38 +46,62 @@ defmodule PaymentsApi.Payments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_transaction(
-        %{
-          source: source,
-          amount: _amount,
-          recipient: recipient,
-          description: _description
-        } = attrs
-      ) do
+  def create_transaction(%{} = attrs) do
     ## buscar as carteiras e a rate
-    source_id = String.to_integer(source)
-    recipient_id = String.to_integer(recipient)
+
+    attrs = Map.put_new(attrs, :description, nil)
+
+    source_id = String.to_integer(attrs.source)
+    recipient_id = String.to_integer(attrs.recipient)
 
     with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs),
          %{source: source, recipient: recipient} = metadata <-
            retrieve_transaction_metadata(source_id, recipient_id) do
+      exchange_rate = ExchangeRate.retrieve_exchange_rate(source.currency, recipient.currency)
+
+      initial_transaction_state =
+        Map.put(
+          initial_transaction_state,
+          :exchange_rate,
+          ExchangeRate.parse_exchange_rate(exchange_rate.exchange_rate)
+        )
+
       op_result =
         %Transaction{}
         |> Transaction.changeset(initial_transaction_state)
         |> Repo.insert()
 
-      exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
-
-      map_to_graphql_type({op_result, metadata, exchange_rate})
+      map_response({op_result, metadata})
     else
-      {:error, errors} ->
-        {:error, errors}
+      errors when is_list(errors) ->
+        errors
 
       nil ->
-        ErrorsHelper.build_graphql_error([
-          "source or recipient wallet does not exist"
-        ])
+        ["source or recipient wallet does not exist"]
     end
+  end
+
+  def update_transaction_status(transaction, new_status) do
+    transaction
+    |> Transaction.changeset(%{status: new_status})
+    |> Repo.update()
+  end
+
+  def retrieve_transactions_to_process() do
+    Transaction.build_retrieve_transactions_to_process_query()
+    |> Repo.all()
+  end
+
+  def process_transaction() do
+    retrieve_transactions_to_process()
+    |> Enum.map(&TransactionValidator.maybe_validate_transaction(&1))
+    |> Enum.each(fn validation_result ->
+      case validation_result do
+        {:valid, transaction} -> update_transaction_status(transaction, "PROCESSED")
+        # log transaction failures
+        {:invalid, _error, transaction} -> update_transaction_status(transaction, "REFUSED")
+      end
+    end)
   end
 
   def get_user(id) do
@@ -127,15 +138,14 @@ defmodule PaymentsApi.Payments do
         |> Repo.insert()
 
       {false, _} ->
-        ErrorsHelper.build_graphql_error(["User does not exist"])
+        ["User does not exist"]
 
       {_, false} ->
-        ErrorsHelper.build_graphql_error(["Currency not supported"])
+        ["Currency not supported"]
     end
   end
 
   ## helpers
-
   defp build_wallet_initial_state(attrs) do
     %Wallet{balance: 0, currency: attrs.currency, user_id: String.to_integer(attrs.user_id)}
   end
@@ -166,19 +176,19 @@ defmodule PaymentsApi.Payments do
          recipient: recipient,
          description: description
        }) do
-    case is_transaction_amount_format_valid?(amount) do
-      true ->
+    case maybe_parse_amount(amount) do
+      {:valid, parsed_amount} ->
         {:ok,
          %{
            status: "PENDING",
+           amount: parsed_amount,
            description: description,
-           amount: parse_amount(amount),
            source: String.to_integer(source),
            recipient: String.to_integer(recipient)
          }}
 
-      false ->
-        ErrorsHelper.build_graphql_error(["transaction amount bad formatted. Expecting 111,11"])
+      {:invalid, _} ->
+        ["transaction amount bad formatted."]
     end
   end
 
@@ -187,29 +197,25 @@ defmodule PaymentsApi.Payments do
     |> Repo.one()
   end
 
-  defp retrieve_exchange_rate(from_currency, to_currency) do
-    exchange_rate = ExchangeRateMonitorServer.get_rate_for_currency(from_currency, to_currency)
-    exchange_rate
+  defp maybe_parse_amount(transaction_amount) do
+    cond do
+      String.match?(transaction_amount, ~r/^\d+,\d{2}$/) ->
+        {:valid, String.replace(transaction_amount, ",", "") |> String.to_integer()}
+
+      String.match?(transaction_amount, ~r/^\d+.\d{2}$/) ->
+        {:valid, String.replace(transaction_amount, ".", "") |> String.to_integer()}
+
+      String.match?(transaction_amount, ~r/^\d+/) ->
+        {:valid, transaction_amount |> String.to_integer()}
+
+      true ->
+        {:invalid, nil}
+    end
   end
 
-  defp is_transaction_amount_format_valid?(amount) do
-    String.match?(amount, ~r/^\d+,\d{2}$/)
-  end
-
-  defp parse_amount(transaction_amount) do
-    String.replace(transaction_amount, ",", "")
-    |> String.to_integer()
-  end
-
-  defp parse_exchange_rate(exchange_rate) do
-    String.replace(exchange_rate, ".", "")
-    |> String.to_integer()
-  end
-
-  defp map_to_graphql_type({
+  defp map_response({
          {:ok, transaction} = _op_result,
-         %{source: source, recipient: recipient} = _metadata,
-         exchange_rate
+         %{source: source, recipient: recipient} = _metadata
        }) do
     {:ok,
      %{
@@ -221,7 +227,7 @@ defmodule PaymentsApi.Payments do
        from_currency: source.currency,
        to_currency: recipient.currency,
        description: transaction.description,
-       exchange_rate: parse_exchange_rate(exchange_rate.exchange_rate)
+       exchange_rate: transaction.exchange_rate
      }}
   end
 end
