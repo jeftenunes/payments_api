@@ -9,11 +9,8 @@ defmodule PaymentsApiWeb.Resolvers.WalletsResolver do
       {:ok, wallet} ->
         {:ok, wallet}
 
-      {:error, errors} when is_list(errors) ->
-        {:error, errors}
-
-      {:error, changeset} ->
-        {:error, ErrorsHelper.traverse_errors(changeset)}
+      errors when is_list(errors) ->
+        ErrorsHelper.build_graphql_error(errors)
     end
   end
 

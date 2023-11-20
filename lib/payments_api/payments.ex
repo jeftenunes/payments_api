@@ -7,16 +7,15 @@ defmodule PaymentsApi.Payments do
 
   alias PaymentsApi.Payments.TransactionValidator
   alias PaymentsApi.Repo
-  alias PaymentsApiWeb.Resolvers.ErrorsHelper
-  alias PaymentsApi.Payments.TransactionMetadata
-  alias PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
 
   alias PaymentsApi.Payments.{
     User,
     Wallet,
     Transaction,
+    ExchangeRate,
+    TransactionMetadata,
     Currencies.Currency,
-    Currencies.ExchangeRateMonitorServer
+    TransactionValidator
   }
 
   @doc """
@@ -60,28 +59,24 @@ defmodule PaymentsApi.Payments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_transaction(
-        %{
-          source: source,
-          amount: _amount,
-          recipient: recipient,
-          description: _description
-        } = attrs
-      ) do
+  def create_transaction(%{} = attrs) do
     ## buscar as carteiras e a rate
-    source_id = String.to_integer(source)
-    recipient_id = String.to_integer(recipient)
+
+    attrs = Map.put_new(attrs, :description, nil)
+
+    source_id = String.to_integer(attrs.source)
+    recipient_id = String.to_integer(attrs.recipient)
 
     with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs),
          %{source: source, recipient: recipient} = metadata <-
            retrieve_transaction_metadata(source_id, recipient_id) do
-      exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
+      exchange_rate = ExchangeRate.retrieve_exchange_rate(source.currency, recipient.currency)
 
       initial_transaction_state =
         Map.put(
           initial_transaction_state,
           :exchange_rate,
-          parse_exchange_rate(exchange_rate.exchange_rate)
+          ExchangeRate.parse_exchange_rate(exchange_rate.exchange_rate)
         )
 
       op_result =
@@ -89,16 +84,37 @@ defmodule PaymentsApi.Payments do
         |> Transaction.changeset(initial_transaction_state)
         |> Repo.insert()
 
-      map_graphql_response({op_result, metadata})
+      map_response({op_result, metadata})
     else
-      {:error, errors} ->
-        {:error, errors}
+      errors when is_list(errors) ->
+        errors
 
       nil ->
-        ErrorsHelper.build_graphql_error([
-          "source or recipient wallet does not exist"
-        ])
+        ["source or recipient wallet does not exist"]
     end
+  end
+
+  def update_transaction_status(transaction, new_status) do
+    transaction
+    |> Transaction.changeset(%{status: new_status})
+    |> Repo.update()
+  end
+
+  def retrieve_transactions_to_process() do
+    Transaction.build_retrieve_transactions_to_process_query()
+    |> Repo.all()
+  end
+
+  def process_transaction() do
+    retrieve_transactions_to_process()
+    |> Enum.map(&TransactionValidator.maybe_validate_transaction(&1))
+    |> Enum.each(fn validation_result ->
+      case validation_result do
+        {:valid, transaction} -> update_transaction_status(transaction, "PROCESSED")
+        # log transaction failures
+        {:invalid, _error, transaction} -> update_transaction_status(transaction, "REFUSED")
+      end
+    end)
   end
 
   def get_user(id) do
@@ -135,57 +151,11 @@ defmodule PaymentsApi.Payments do
         |> Repo.insert()
 
       {false, _} ->
-        ErrorsHelper.build_graphql_error(["User does not exist"])
+        ["User does not exist"]
 
       {_, false} ->
-        ErrorsHelper.build_graphql_error(["Currency not supported"])
+        ["Currency not supported"]
     end
-  end
-
-  def update_transaction_status(transaction, new_status) do
-    transaction
-    |> Transaction.changeset(%{status: new_status})
-    |> Repo.update()
-  end
-
-  def retrieve_transactions_to_process() do
-    Transaction.build_retrieve_transactions_to_process_query()
-    |> Repo.all()
-  end
-
-  def process_transaction() do
-    retrieve_transactions_to_process()
-    |> Enum.map(&TransactionValidator.validate_transaction(&1))
-    |> Enum.each(fn validation_result ->
-      case validation_result do
-        {:valid, transaction} -> update_transaction_status(transaction, "PROCESSED")
-        # log transaction failures
-        {:invalid, _error, transaction} -> update_transaction_status(transaction, "REFUSED")
-      end
-    end)
-
-    # validations_result = TransactionValidator.validate_transaction(pending_transaction)
-    # IO.inspect(validations_result)
-    # validations_result
-
-    # transactions =
-    #   Transaction.find_transaction_history_for_wallet(transaction.source)
-    #   |> Repo.all()
-
-    # case TransactionValidator.validate_pending_transactions(transactions) do
-    #   {:valid, validation_results} ->
-    #     Enum.each(validation_results, &update_transaction_status(&1.transaction, "PROCESSED"))
-    #     :ok
-
-    #   {:invalid, validation_results} ->
-    #     Enum.each(validation_results, fn result ->
-    #       IO.inspect(
-    #         "Transaction rejected: #{result.transaction.id}, reason: #{Enum.join(result.errors, " | ")}"
-    #       )
-
-    #       :error
-    #     end)
-    # end
   end
 
   ## helpers
@@ -231,18 +201,13 @@ defmodule PaymentsApi.Payments do
          }}
 
       {:invalid, _} ->
-        ErrorsHelper.build_graphql_error(["transaction amount bad formatted."])
+        ["transaction amount bad formatted."]
     end
   end
 
   defp retrieve_transaction_metadata(source_id, recipient_id) do
     TransactionMetadata.build_fetch_wallets_qry(source_id, recipient_id)
     |> Repo.one()
-  end
-
-  defp retrieve_exchange_rate(from_currency, to_currency) do
-    exchange_rate = ExchangeRateMonitorServer.get_rate_for_currency(from_currency, to_currency)
-    exchange_rate
   end
 
   defp maybe_parse_amount(transaction_amount) do
@@ -261,12 +226,7 @@ defmodule PaymentsApi.Payments do
     end
   end
 
-  defp parse_exchange_rate(exchange_rate) do
-    String.replace(exchange_rate, ".", "")
-    |> String.to_integer()
-  end
-
-  defp map_graphql_response({
+  defp map_response({
          {:ok, transaction} = _op_result,
          %{source: source, recipient: recipient} = _metadata
        }) do
