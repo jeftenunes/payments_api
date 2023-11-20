@@ -19,19 +19,6 @@ defmodule PaymentsApi.Payments do
   }
 
   @doc """
-  Returns the list of transactions.
-
-  ## Examples
-
-      iex> list_transactions()
-      [%Transaction{}, ...]
-
-  """
-  def list_transactions do
-    Repo.all(Transaction)
-  end
-
-  @doc """
   Gets a single transaction.
 
   Returns nil if the Transaction does not exist.
