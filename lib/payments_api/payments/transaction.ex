@@ -1,5 +1,5 @@
 defmodule PaymentsApi.Payments.Transaction do
-  alias PaymentsApi.Payments.Transaction
+  alias PaymentsApi.Payments.{Wallet, Transaction}
 
   use Ecto.Schema
 
@@ -35,9 +35,29 @@ defmodule PaymentsApi.Payments.Transaction do
     )
   end
 
-  def find_transaction_history_for_wallet(wallet_id) do
-    from(t in Transaction)
-    |> where([t], field(t, :source) == ^wallet_id)
+  def build_find_transaction_history_for_wallet_qry(wallet_id) do
+    from(t in Transaction,
+      where: (t.source == ^wallet_id or t.recipient == ^wallet_id) and t.status == "PROCESSED"
+    )
+
+    # NOT GONNA PAGINATE, IN A REAL APP, IT'D BE NEEDED
+  end
+
+  def build_find_transaction_history_for_user_qry(user_id) do
+    from(w in Wallet,
+      join: t in Transaction,
+      on: w.id == t.source or w.id == t.recipient,
+      where: w.user_id == ^user_id and t.status == "PROCESSED",
+      select: %{
+        wallet_id: w.id,
+        amount: t.amount,
+        source: t.source,
+        user_id: w.user_id,
+        currency: w.currency,
+        transaction_id: t.id,
+        recipient: t.recipient
+      }
+    )
 
     # NOT GONNA PAGINATE, IN A REAL APP, IT'D BE NEEDED
   end

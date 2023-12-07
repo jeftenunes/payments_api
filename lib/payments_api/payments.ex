@@ -13,6 +13,7 @@ defmodule PaymentsApi.Payments do
     Wallet,
     Transaction,
     ExchangeRate,
+    TransactionHelper,
     TransactionMetadata,
     Currencies.Currency,
     TransactionValidator
@@ -57,13 +58,13 @@ defmodule PaymentsApi.Payments do
     with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs),
          %{source: source, recipient: recipient} = metadata <-
            retrieve_transaction_metadata(source_id, recipient_id) do
-      exchange_rate = ExchangeRate.retrieve_exchange_rate(source.currency, recipient.currency)
+      exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
 
       initial_transaction_state =
         Map.put(
           initial_transaction_state,
           :exchange_rate,
-          ExchangeRate.parse_exchange_rate(exchange_rate.exchange_rate)
+          exchange_rate
         )
 
       op_result =
@@ -102,6 +103,12 @@ defmodule PaymentsApi.Payments do
         {:invalid, _error, transaction} -> update_transaction_status(transaction, "REFUSED")
       end
     end)
+  end
+
+  def retrieve_total_worth_for_user(%{id: id, currency: currency} = params) do
+    Transaction.build_find_transaction_history_for_user_qry(id)
+    |> Repo.all()
+    |> aggregate_user_transaction_summary(params)
   end
 
   def get_user(id) do
@@ -146,6 +153,62 @@ defmodule PaymentsApi.Payments do
   end
 
   ## helpers
+  defp aggregate_user_transaction_summary([], %{id: user_id, currency: currency}),
+    do: %{user_id: user_id, currency: currency, total_worth: 0}
+
+  defp aggregate_user_transaction_summary(wallets_transactions, %{
+         id: _user_id,
+         currency: currency
+       }) do
+    wallets =
+      wallets_transactions
+      |> Enum.group_by(fn transaction -> transaction.wallet_id end)
+      |> Enum.reduce([], fn {wallet_id, transactions}, acc ->
+        acc =
+          [
+            Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc ->
+              %{
+                currency: transaction.currency,
+                user_id: transaction.user_id,
+                wallet_id: transaction.wallet_id,
+                amount:
+                  TransactionHelper.sum_balance_amount(
+                    transaction,
+                    wallet_id,
+                    transaction_acc.amount
+                  )
+              }
+            end)
+            | acc
+          ]
+
+        acc
+      end)
+
+      Enum.map(wallets, fn wallet ->
+        exchange_rate = retrieve_exchange_rate(wallet.currency, currency)
+
+        %{
+          currency: wallet.currency,
+          user_id: wallet.user_id,
+          wallet_id: wallet.wallet_id,
+          absolut_amount: wallet.amount,
+          amount: wallet.amount * exchange_rate
+        }
+      end)
+      |> Enum.reduce(%{currency: currency, user_id: nil, total_worth: 0}, fn summary, acc ->
+        %{acc | user_id: summary.user_id, total_worth: summary.amount + acc.total_worth}
+      end)
+  end
+
+  defp retrieve_exchange_rate(from_currency, to_currency) when from_currency == to_currency,
+    do: 1
+
+  defp retrieve_exchange_rate(from_currency, to_currency) do
+    ExchangeRate.retrieve_exchange_rate(from_currency, to_currency).exchange_rate
+    |> ExchangeRate.parse_exchange_rate()
+  end
+
   defp build_wallet_initial_state(attrs) do
     %Wallet{balance: 0, currency: attrs.currency, user_id: String.to_integer(attrs.user_id)}
   end

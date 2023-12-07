@@ -24,4 +24,12 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
   def find_user_by(params, _) do
     {:ok, Payments.get_user(String.to_integer(params.id))}
   end
+
+  def find_user_total_worth_by(params, _) do
+    {:ok,
+     Payments.retrieve_total_worth_for_user(%{
+       id: params.user_id,
+       currency: params.currency
+     })}
+  end
 end

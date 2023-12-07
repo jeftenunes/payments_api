@@ -12,6 +12,8 @@ defmodule PaymentsApiWeb.Schema do
   import_types(PaymentsApiWeb.Schema.Types.Transaction)
   import_types(PaymentsApiWeb.Schema.Mutations.Transactions)
 
+  import_types(PaymentsApiWeb.Schema.Types.TotalWorth)
+
   @desc "Queries resources"
   query do
     import_fields(:users_queries)
