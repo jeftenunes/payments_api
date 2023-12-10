@@ -13,13 +13,6 @@ defmodule PaymentsApi.Payments.TransactionHelper do
     acc - parsed_amount
   end
 
-  defp parse_acc(acc) when acc == 0, do: 0.0
-
-  defp parse_acc(acc) do
-    {parsed, _} = Float.parse(acc)
-    parsed
-  end
-
   defp build_amount_value(amount_from_db) do
     amount_from_db
     |> to_string()

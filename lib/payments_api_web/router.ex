@@ -18,7 +18,7 @@ defmodule PaymentsApiWeb.Router do
 
     forward "/graphiql", Absinthe.Plug.GraphiQL,
       schema: PaymentsApiWeb.Schema,
-      # socket: GraphqlUserApiWeb.Channels.UsersSocket,
+      socket: PaymentsApiWeb.Channels.PaymentsServerSocket,
       interface: :playground
 
     forward "/graphql", Absinthe.Plug, schema: PaymentsApiWeb.Schema

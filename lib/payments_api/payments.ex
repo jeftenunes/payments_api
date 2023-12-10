@@ -98,14 +98,17 @@ defmodule PaymentsApi.Payments do
     |> Enum.map(&TransactionValidator.maybe_validate_transaction(&1))
     |> Enum.each(fn validation_result ->
       case validation_result do
-        {:valid, transaction} -> update_transaction_status(transaction, "PROCESSED")
+        {:valid, transaction} ->
+          update_transaction_status(transaction, "PROCESSED")
+
         # log transaction failures
-        {:invalid, _error, transaction} -> update_transaction_status(transaction, "REFUSED")
+        {:invalid, _error, transaction} ->
+          update_transaction_status(transaction, "REFUSED")
       end
     end)
   end
 
-  def retrieve_total_worth_for_user(%{id: id, currency: currency} = params) do
+  def retrieve_total_worth_for_user(%{id: id, currency: _currency} = params) do
     Transaction.build_find_transaction_history_for_user_qry(id)
     |> Repo.all()
     |> aggregate_user_transaction_summary(params)
@@ -185,20 +188,20 @@ defmodule PaymentsApi.Payments do
         acc
       end)
 
-      Enum.map(wallets, fn wallet ->
-        exchange_rate = retrieve_exchange_rate(wallet.currency, currency)
+    Enum.map(wallets, fn wallet ->
+      exchange_rate = retrieve_exchange_rate(wallet.currency, currency)
 
-        %{
-          currency: wallet.currency,
-          user_id: wallet.user_id,
-          wallet_id: wallet.wallet_id,
-          absolut_amount: wallet.amount,
-          amount: wallet.amount * exchange_rate
-        }
-      end)
-      |> Enum.reduce(%{currency: currency, user_id: nil, total_worth: 0}, fn summary, acc ->
-        %{acc | user_id: summary.user_id, total_worth: summary.amount + acc.total_worth}
-      end)
+      %{
+        currency: wallet.currency,
+        user_id: wallet.user_id,
+        wallet_id: wallet.wallet_id,
+        absolut_amount: wallet.amount,
+        amount: wallet.amount * exchange_rate
+      }
+    end)
+    |> Enum.reduce(%{currency: currency, user_id: nil, total_worth: 0}, fn summary, acc ->
+      %{acc | user_id: summary.user_id, total_worth: summary.amount + acc.total_worth}
+    end)
   end
 
   defp retrieve_exchange_rate(from_currency, to_currency) when from_currency == to_currency,
@@ -251,7 +254,7 @@ defmodule PaymentsApi.Payments do
          }}
 
       {:invalid, _} ->
-        ["transaction amount bad formatted."]
+        ["transaction amount incorrectly formatted."]
     end
   end
 

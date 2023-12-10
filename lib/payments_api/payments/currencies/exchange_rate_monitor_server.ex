@@ -21,6 +21,8 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
           last_refreshed: DateTime.t()
         }
 
+  defstruct supervisor: nil, exchange_rates: nil
+
   def start_link(_opts \\ []) do
     GenServer.start_link(__MODULE__, %{}, name: @default_name)
   end
@@ -33,6 +35,10 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
 
   @impl true
   def init(state) do
+    {:ok, supervisor} = Task.Supervisor.start_link()
+
+    state = Map.put(state, :supervisor, supervisor)
+
     {:ok, state, {:continue, :start}}
   end
 
@@ -55,7 +61,16 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
       end)
       |> Enum.into(%{})
 
-    state = Map.put(state, :exchange_rates, exchange_rates)
+    Map.get(state, :exchange_rates)
+    |> retrieve_updated_exchange_rates(exchange_rates)
+    |> publish_exchange_rates_updates(state)
+
+    state =
+      Map.put(
+        state,
+        :exchange_rates,
+        exchange_rates
+      )
 
     {:noreply, state}
   end
@@ -71,6 +86,27 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   end
 
   ## helpers
+  defp publish_exchange_rates_updates(updated_exchange_rates, %{supervisor: supervisor} = _state) do
+    Enum.each(updated_exchange_rates, fn {currency, updated_exchange_rate} ->
+      Task.Supervisor.start_child(supervisor, fn ->
+        Absinthe.Subscription.publish(
+          PaymentsApiWeb.Endpoint,
+          updated_exchange_rate,
+          exchange_rate_updated_for_currency: "exchange_rate_updated:#{currency}"
+        )
+      end)
+    end)
+
+    Task.Supervisor.start_child(supervisor, fn ->
+      Absinthe.Subscription.publish(
+        PaymentsApiWeb.Endpoint,
+        Enum.map(updated_exchange_rates, fn {currency, exchange_rates} ->
+          %{currency: currency, exchange_rates: exchange_rates}
+        end),
+        exchange_rates_updated: "exchange_rates_updated"
+      )
+    end)
+  end
 
   defp fetch_rate_for_currency(from_currency, to_currencies) do
     ratings_for_currency =
@@ -78,5 +114,18 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
       |> Enum.map(&Currency.fetch_exchange_rate_from_api(from_currency, &1))
 
     {from_currency, ratings_for_currency}
+  end
+
+  defp retrieve_updated_exchange_rates(nil, new_rates) do
+    new_rates
+  end
+
+  defp retrieve_updated_exchange_rates(actual_rates, new_rates) do
+    new_rates
+    |> Enum.filter(fn {k, v} ->
+      actual_rate = Map.get(actual_rates, k)
+
+      actual_rate != v
+    end)
   end
 end

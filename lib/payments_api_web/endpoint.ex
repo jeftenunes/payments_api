@@ -1,5 +1,6 @@
 defmodule PaymentsApiWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :payments_api
+  use Absinthe.Phoenix.Endpoint
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
@@ -10,6 +11,10 @@ defmodule PaymentsApiWeb.Endpoint do
     signing_salt: "vTl8pbvk",
     same_site: "Lax"
   ]
+
+  socket "/socket", PaymentsApiWeb.Channels.PaymentsServerSocket,
+    websocket: true,
+    longpoll: false
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
 
