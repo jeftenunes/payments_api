@@ -13,8 +13,7 @@ defmodule PaymentsApi.Payments do
     Wallet,
     Transaction,
     ExchangeRate,
-    TransactionHelper,
-    TransactionMetadata,
+    BalanceHelper,
     Currencies.Currency,
     TransactionValidator
   }
@@ -56,8 +55,8 @@ defmodule PaymentsApi.Payments do
     recipient_id = String.to_integer(attrs.recipient)
 
     with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs),
-         %{source: source, recipient: recipient} = metadata <-
-           retrieve_transaction_metadata(source_id, recipient_id) do
+         %{source: source, recipient: recipient} = summary <-
+           retrieve_transaction_summary(source_id, recipient_id) do
       exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
 
       initial_transaction_state =
@@ -72,7 +71,7 @@ defmodule PaymentsApi.Payments do
         |> Transaction.changeset(initial_transaction_state)
         |> Repo.insert()
 
-      map_response({op_result, metadata})
+      map_response({op_result, summary})
     else
       errors when is_list(errors) ->
         errors
@@ -155,6 +154,10 @@ defmodule PaymentsApi.Payments do
     end
   end
 
+  def load_user_wallet(user_id, amount) do
+    # create_transaction(%{amount: amount, description: "internal reload", source: 1000})
+  end
+
   ## helpers
   defp aggregate_user_transaction_summary([], %{id: user_id, currency: currency}),
     do: %{user_id: user_id, currency: currency, total_worth: 0}
@@ -163,32 +166,30 @@ defmodule PaymentsApi.Payments do
          id: _user_id,
          currency: currency
        }) do
-    wallets =
-      wallets_transactions
-      |> Enum.group_by(fn transaction -> transaction.wallet_id end)
-      |> Enum.reduce([], fn {wallet_id, transactions}, acc ->
-        acc =
-          [
-            Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc ->
-              %{
-                currency: transaction.currency,
-                user_id: transaction.user_id,
-                wallet_id: transaction.wallet_id,
-                amount:
-                  TransactionHelper.sum_balance_amount(
-                    transaction,
-                    wallet_id,
-                    transaction_acc.amount
-                  )
-              }
-            end)
-            | acc
-          ]
+    wallets_transactions
+    |> Enum.group_by(fn transaction -> transaction.wallet_id end)
+    |> Enum.reduce([], fn {wallet_id, transactions}, acc ->
+      acc =
+        [
+          Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc ->
+            %{
+              currency: transaction.currency,
+              user_id: transaction.user_id,
+              wallet_id: transaction.wallet_id,
+              amount:
+                BalanceHelper.sum_balance_amount(
+                  transaction,
+                  wallet_id,
+                  transaction_acc.amount
+                )
+            }
+          end)
+          | acc
+        ]
 
-        acc
-      end)
-
-    Enum.map(wallets, fn wallet ->
+      acc
+    end)
+    |> Enum.map(fn wallet ->
       exchange_rate = retrieve_exchange_rate(wallet.currency, currency)
 
       %{
@@ -258,8 +259,8 @@ defmodule PaymentsApi.Payments do
     end
   end
 
-  defp retrieve_transaction_metadata(source_id, recipient_id) do
-    TransactionMetadata.build_fetch_wallets_qry(source_id, recipient_id)
+  defp retrieve_transaction_summary(source_id, recipient_id) do
+    Wallet.build_fetch_wallets_qry(source_id, recipient_id)
     |> Repo.one()
   end
 
@@ -281,7 +282,7 @@ defmodule PaymentsApi.Payments do
 
   defp map_response({
          {:ok, transaction} = _op_result,
-         %{source: source, recipient: recipient} = _metadata
+         %{source: source, recipient: recipient} = _summary
        }) do
     {:ok,
      %{

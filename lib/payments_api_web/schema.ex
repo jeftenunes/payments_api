@@ -38,4 +38,9 @@ defmodule PaymentsApiWeb.Schema do
     import_fields(:user_worth_subscriptions)
     import_fields(:exchange_rate_subscriptions)
   end
+
+  def my_subscription_callback(_parent, _args, _info) do
+    IO.puts("Assinatura ativada! Faça algo aqui.")
+    # Chame a função que você deseja executar ao ativar a assinatura
+  end
 end
