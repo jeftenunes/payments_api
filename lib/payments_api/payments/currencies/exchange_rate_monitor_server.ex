@@ -1,7 +1,7 @@
 defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   use GenServer
 
-  alias PaymentsApi.Payments.Currencies.Currency
+  alias PaymentsApi.Payments.Currencies
 
   @default_name ExchangeRateMonitorServer
 
@@ -78,7 +78,7 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   @impl true
   def handle_call({:get_exchange_rate, from_currency, to_currency}, _from, state) do
     exchange_rate =
-      Map.get(state, :exchange_rates)[Currency.get_currency_atom(from_currency)]
+      Map.get(state, :exchange_rates)[Currencies.get_currency_atom(from_currency)]
       |> Enum.filter(fn currency_rate -> currency_rate.to_currency == to_currency end)
       |> List.first()
 
@@ -111,7 +111,7 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   defp fetch_rate_for_currency(from_currency, to_currencies) do
     ratings_for_currency =
       to_currencies
-      |> Enum.map(&Currency.fetch_exchange_rate_from_api(from_currency, &1))
+      |> Enum.map(&Currencies.fetch_exchange_rate_from_api(from_currency, &1))
 
     {from_currency, ratings_for_currency}
   end

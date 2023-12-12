@@ -11,10 +11,10 @@ defmodule PaymentsApi.Payments do
   alias PaymentsApi.Payments.{
     User,
     Wallet,
+    Currencies,
     Transaction,
     ExchangeRate,
     BalanceHelper,
-    Currencies.Currency,
     TransactionValidator
   }
 
@@ -46,10 +46,11 @@ defmodule PaymentsApi.Payments do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_transaction(%{} = attrs) do
+  def create_transaction(%{} = attrs, transaction_status \\ "PENDING") do
     ## buscar as carteiras e a rate
 
     attrs = Map.put_new(attrs, :description, nil)
+    attrs = Map.put_new(attrs, :status, transaction_status)
 
     source_id = String.to_integer(attrs.source)
     recipient_id = String.to_integer(attrs.recipient)
@@ -63,13 +64,15 @@ defmodule PaymentsApi.Payments do
         Map.put(
           initial_transaction_state,
           :exchange_rate,
-          exchange_rate
+          ExchangeRate.parse_exchange_rate_to_db(to_string(exchange_rate))
         )
 
       op_result =
         %Transaction{}
         |> Transaction.changeset(initial_transaction_state)
         |> Repo.insert()
+
+      IO.inspect(op_result)
 
       map_response({op_result, summary})
     else
@@ -140,22 +143,27 @@ defmodule PaymentsApi.Payments do
   def get_wallet(id), do: Repo.get!(Wallet, id)
 
   def create_wallet(%{user_id: user_id, currency: currency} = attrs) do
-    case {user_exists(String.to_integer(user_id)), Currency.is_supported?(currency)} do
+    case {user_exists(String.to_integer(user_id)), Currencies.is_supported?(currency)} do
       {true, true} ->
-        build_wallet_initial_state(attrs)
+        {:ok, wallet} = build_wallet_initial_state(attrs)
         |> Wallet.changeset(attrs)
         |> Repo.insert()
+
+        {:ok, _} = create_transaction(%{
+          amount:   "10000",
+          source: to_string(wallet.id),
+          recipient: to_string(wallet.id),
+          description: "FIRST LOAD"
+        }, "PROCESSED")
+
+        {:ok, wallet}
 
       {false, _} ->
         ["User does not exist"]
 
       {_, false} ->
-        ["Currency not supported"]
+        ["Currencies not supported"]
     end
-  end
-
-  def load_user_wallet(user_id, amount) do
-    # create_transaction(%{amount: amount, description: "internal reload", source: 1000})
   end
 
   ## helpers
@@ -169,10 +177,10 @@ defmodule PaymentsApi.Payments do
     wallets_transactions
     |> Enum.group_by(fn transaction -> transaction.wallet_id end)
     |> Enum.reduce([], fn {wallet_id, transactions}, acc ->
+
       acc =
         [
-          Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc ->
-            %{
+          Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc -> %{
               currency: transaction.currency,
               user_id: transaction.user_id,
               wallet_id: transaction.wallet_id,
@@ -189,19 +197,16 @@ defmodule PaymentsApi.Payments do
 
       acc
     end)
-    |> Enum.map(fn wallet ->
-      exchange_rate = retrieve_exchange_rate(wallet.currency, currency)
-
-      %{
-        currency: wallet.currency,
-        user_id: wallet.user_id,
-        wallet_id: wallet.wallet_id,
-        absolut_amount: wallet.amount,
-        amount: wallet.amount * exchange_rate
+    |> Enum.map(fn transaction -> %{
+        currency: transaction.currency,
+        user_id: transaction.user_id,
+        wallet_id: transaction.wallet_id,
+        amount: transaction.amount
       }
     end)
     |> Enum.reduce(%{currency: currency, user_id: nil, total_worth: 0}, fn summary, acc ->
-      %{acc | user_id: summary.user_id, total_worth: summary.amount + acc.total_worth}
+      exchange_rate = retrieve_exchange_rate(summary.currency, currency)
+      %{acc | user_id: summary.user_id, total_worth: (summary.amount * exchange_rate) + acc.total_worth}
     end)
   end
 
@@ -240,6 +245,7 @@ defmodule PaymentsApi.Payments do
   defp build_initial_transaction_state(%{
          amount: amount,
          source: source,
+         status: status,
          recipient: recipient,
          description: description
        }) do
@@ -247,7 +253,7 @@ defmodule PaymentsApi.Payments do
       {:valid, parsed_amount} ->
         {:ok,
          %{
-           status: "PENDING",
+           status: status,
            amount: parsed_amount,
            description: description,
            source: String.to_integer(source),
