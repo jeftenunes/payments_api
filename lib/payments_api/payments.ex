@@ -14,6 +14,7 @@ defmodule PaymentsApi.Payments do
     Currencies,
     Transaction,
     ExchangeRate,
+    Parsers.MoneyParser,
     TransactionValidator,
     Helpers.BalanceHelper
   }
@@ -55,7 +56,7 @@ defmodule PaymentsApi.Payments do
     source_id = String.to_integer(attrs.source)
     recipient_id = String.to_integer(attrs.recipient)
 
-    with {:ok, initial_transaction_state} <- build_initial_transaction_state(attrs),
+    with initial_transaction_state <- build_initial_transaction_state(attrs),
          %{source: source, recipient: recipient} = summary <-
            retrieve_transaction_summary(source_id, recipient_id) do
       exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
@@ -64,8 +65,23 @@ defmodule PaymentsApi.Payments do
         Map.put(
           initial_transaction_state,
           :exchange_rate,
-          ExchangeRate.parse_exchange_rate_to_db(to_string(exchange_rate))
+          ExchangeRate.parse_exchange_rate_to_db(exchange_rate)
         )
+
+      {:ok, transaction_amount} =
+        apply_exchange_rate(attrs.amount, exchange_rate)
+
+      {:valid, transaction_amount} =
+        MoneyParser.maybe_parse_amount_from_string(to_string(transaction_amount))
+
+      initial_transaction_state =
+        Map.put(
+          initial_transaction_state,
+          :amount,
+          transaction_amount
+        )
+
+      IO.inspect(initial_transaction_state)
 
       op_result =
         %Transaction{}
@@ -183,8 +199,8 @@ defmodule PaymentsApi.Payments do
         [
           Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc ->
             %{
-              currency: transaction.currency,
               user_id: transaction.user_id,
+              currency: transaction.currency,
               wallet_id: transaction.wallet_id,
               amount:
                 BalanceHelper.sum_balance_amount(
@@ -207,23 +223,27 @@ defmodule PaymentsApi.Payments do
         amount: transaction.amount
       }
     end)
-    |> Enum.reduce(%{currency: currency, user_id: nil, total_worth: 0}, fn summary, acc ->
-      exchange_rate = retrieve_exchange_rate(summary.currency, currency)
+    |> Enum.reduce(
+      %{currency: currency, user_id: nil, total_worth: 0, exchange_rate: 0},
+      fn summary, acc ->
+        exchange_rate =
+          retrieve_exchange_rate(summary.currency, currency) |> String.to_float()
 
-      %{
-        acc
-        | user_id: summary.user_id,
-          total_worth: summary.amount * exchange_rate + acc.total_worth
-      }
-    end)
+        %{
+          acc
+          | user_id: summary.user_id,
+            exchange_rate: exchange_rate,
+            total_worth: summary.amount + acc.total_worth
+        }
+      end
+    )
   end
 
   defp retrieve_exchange_rate(from_currency, to_currency) when from_currency == to_currency,
     do: 1
 
   defp retrieve_exchange_rate(from_currency, to_currency) do
-    ExchangeRate.retrieve_exchange_rate(from_currency, to_currency).exchange_rate
-    |> ExchangeRate.parse_exchange_rate()
+    ExchangeRate.retrieve_exchange_rate(from_currency, to_currency)
   end
 
   defp build_wallet_initial_state(attrs) do
@@ -251,22 +271,26 @@ defmodule PaymentsApi.Payments do
   end
 
   defp build_initial_transaction_state(%{
-         amount: amount,
          source: source,
          status: status,
          recipient: recipient,
          description: description
        }) do
-    case maybe_parse_amount(amount) do
+    %{
+      status: status,
+      description: description,
+      source: String.to_integer(source),
+      recipient: String.to_integer(recipient)
+    }
+  end
+
+  defp apply_exchange_rate(amount, exchange_rate) do
+    {:valid, exchange_rate} = MoneyParser.maybe_parse_amount_from_string(exchange_rate)
+    exchange_rate = MoneyParser.maybe_parse_amount_from_integer(exchange_rate)
+
+    case MoneyParser.maybe_parse_amount_from_string(amount) do
       {:valid, parsed_amount} ->
-        {:ok,
-         %{
-           status: status,
-           amount: parsed_amount,
-           description: description,
-           source: String.to_integer(source),
-           recipient: String.to_integer(recipient)
-         }}
+        {:ok, parsed_amount * exchange_rate}
 
       {:invalid, _} ->
         ["transaction amount incorrectly formatted."]
@@ -276,51 +300,6 @@ defmodule PaymentsApi.Payments do
   defp retrieve_transaction_summary(source_id, recipient_id) do
     Wallet.build_fetch_wallets_qry(source_id, recipient_id)
     |> Repo.one()
-  end
-
-  defp maybe_parse_amount(transaction_amount) do
-    cond do
-      String.match?(transaction_amount, ~r/^0,\d{1,2}$/) ->
-        parsed =
-          String.replace(transaction_amount, ",", "")
-          |> String.slice(1..-1)
-          |> String.pad_trailing(2, "0")
-          |> String.to_integer()
-
-        {:valid, parsed}
-
-      String.match?(transaction_amount, ~r/^\d+,\d{1,2}$/) ->
-        parsed =
-          String.replace(transaction_amount, ",", "")
-          |> String.pad_trailing(3, "0")
-          |> String.to_integer()
-
-        {:valid, parsed}
-
-      String.match?(transaction_amount, ~r/^0.\d{1,2}$/) ->
-        parsed =
-          String.replace(transaction_amount, ".", "")
-          |> String.slice(1..-1)
-          |> String.pad_trailing(2, "0")
-          |> String.to_integer()
-
-        IO.inspect(parsed)
-        {:valid, parsed}
-
-      String.match?(transaction_amount, ~r/^\d+.\d{1,2}$/) ->
-        parsed =
-          String.replace(transaction_amount, ",", "")
-          |> String.pad_trailing(3, "0")
-          |> String.to_integer()
-
-        {:valid, parsed}
-
-      String.match?(transaction_amount, ~r/^\d+/) ->
-        {:valid, (transaction_amount |> String.to_integer()) * 100}
-
-      true ->
-        {:invalid, nil}
-    end
   end
 
   defp map_response({

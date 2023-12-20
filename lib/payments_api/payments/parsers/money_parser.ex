@@ -1,8 +1,6 @@
 defmodule PaymentsApi.Payments.Parsers.MoneyParser do
   @spec maybe_parse_amount_from_string(String.t()) :: {:valid, integer()} | {:invalid, nil}
   def maybe_parse_amount_from_string(amount) do
-    IO.inspect(amount)
-
     cond do
       String.match?(amount, ~r/^0,\d{1,2}$/) ->
         IO.inspect("2")
