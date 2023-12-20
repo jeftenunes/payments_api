@@ -39,8 +39,6 @@ defmodule PaymentsApi.Payments.Transaction do
     from(t in Transaction,
       where: (t.source == ^wallet_id or t.recipient == ^wallet_id) and t.status == "PROCESSED"
     )
-
-    # NOT GONNA PAGINATE, IN A REAL APP, IT'D BE NEEDED
   end
 
   def build_find_transaction_history_for_user_qry(user_id) do
@@ -58,7 +56,5 @@ defmodule PaymentsApi.Payments.Transaction do
         recipient: t.recipient
       }
     )
-
-    # NOT GONNA PAGINATE, IN A REAL APP, IT'D BE NEEDED
   end
 end

@@ -14,8 +14,8 @@ defmodule PaymentsApi.Payments do
     Currencies,
     Transaction,
     ExchangeRate,
-    BalanceHelper,
-    TransactionValidator
+    TransactionValidator,
+    Helpers.BalanceHelper
   }
 
   @doc """
@@ -72,8 +72,6 @@ defmodule PaymentsApi.Payments do
         |> Transaction.changeset(initial_transaction_state)
         |> Repo.insert()
 
-      IO.inspect(op_result)
-
       map_response({op_result, summary})
     else
       errors when is_list(errors) ->
@@ -103,8 +101,7 @@ defmodule PaymentsApi.Payments do
         {:valid, transaction} ->
           update_transaction_status(transaction, "PROCESSED")
 
-        # log transaction failures
-        {:invalid, _error, transaction} ->
+        {:invalid, transaction} ->
           update_transaction_status(transaction, "REFUSED")
       end
     end)
@@ -145,16 +142,21 @@ defmodule PaymentsApi.Payments do
   def create_wallet(%{user_id: user_id, currency: currency} = attrs) do
     case {user_exists(String.to_integer(user_id)), Currencies.is_supported?(currency)} do
       {true, true} ->
-        {:ok, wallet} = build_wallet_initial_state(attrs)
-        |> Wallet.changeset(attrs)
-        |> Repo.insert()
+        {:ok, wallet} =
+          build_wallet_initial_state(attrs)
+          |> Wallet.changeset(attrs)
+          |> Repo.insert()
 
-        {:ok, _} = create_transaction(%{
-          amount:   "10000",
-          source: to_string(wallet.id),
-          recipient: to_string(wallet.id),
-          description: "FIRST LOAD"
-        }, "PROCESSED")
+        {:ok, _} =
+          create_transaction(
+            %{
+              amount: "10000",
+              source: to_string(wallet.id),
+              recipient: to_string(wallet.id),
+              description: "FIRST LOAD"
+            },
+            "PROCESSED"
+          )
 
         {:ok, wallet}
 
@@ -177,10 +179,10 @@ defmodule PaymentsApi.Payments do
     wallets_transactions
     |> Enum.group_by(fn transaction -> transaction.wallet_id end)
     |> Enum.reduce([], fn {wallet_id, transactions}, acc ->
-
       acc =
         [
-          Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc -> %{
+          Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc ->
+            %{
               currency: transaction.currency,
               user_id: transaction.user_id,
               wallet_id: transaction.wallet_id,
@@ -197,7 +199,8 @@ defmodule PaymentsApi.Payments do
 
       acc
     end)
-    |> Enum.map(fn transaction -> %{
+    |> Enum.map(fn transaction ->
+      %{
         currency: transaction.currency,
         user_id: transaction.user_id,
         wallet_id: transaction.wallet_id,
@@ -206,7 +209,12 @@ defmodule PaymentsApi.Payments do
     end)
     |> Enum.reduce(%{currency: currency, user_id: nil, total_worth: 0}, fn summary, acc ->
       exchange_rate = retrieve_exchange_rate(summary.currency, currency)
-      %{acc | user_id: summary.user_id, total_worth: (summary.amount * exchange_rate) + acc.total_worth}
+
+      %{
+        acc
+        | user_id: summary.user_id,
+          total_worth: summary.amount * exchange_rate + acc.total_worth
+      }
     end)
   end
 
@@ -272,14 +280,43 @@ defmodule PaymentsApi.Payments do
 
   defp maybe_parse_amount(transaction_amount) do
     cond do
-      String.match?(transaction_amount, ~r/^\d+,\d{2}$/) ->
-        {:valid, String.replace(transaction_amount, ",", "") |> String.to_integer()}
+      String.match?(transaction_amount, ~r/^0,\d{1,2}$/) ->
+        parsed =
+          String.replace(transaction_amount, ",", "")
+          |> String.slice(1..-1)
+          |> String.pad_trailing(2, "0")
+          |> String.to_integer()
 
-      String.match?(transaction_amount, ~r/^\d+.\d{2}$/) ->
-        {:valid, String.replace(transaction_amount, ".", "") |> String.to_integer()}
+        {:valid, parsed}
+
+      String.match?(transaction_amount, ~r/^\d+,\d{1,2}$/) ->
+        parsed =
+          String.replace(transaction_amount, ",", "")
+          |> String.pad_trailing(3, "0")
+          |> String.to_integer()
+
+        {:valid, parsed}
+
+      String.match?(transaction_amount, ~r/^0.\d{1,2}$/) ->
+        parsed =
+          String.replace(transaction_amount, ".", "")
+          |> String.slice(1..-1)
+          |> String.pad_trailing(2, "0")
+          |> String.to_integer()
+
+        IO.inspect(parsed)
+        {:valid, parsed}
+
+      String.match?(transaction_amount, ~r/^\d+.\d{1,2}$/) ->
+        parsed =
+          String.replace(transaction_amount, ",", "")
+          |> String.pad_trailing(3, "0")
+          |> String.to_integer()
+
+        {:valid, parsed}
 
       String.match?(transaction_amount, ~r/^\d+/) ->
-        {:valid, transaction_amount |> String.to_integer()}
+        {:valid, (transaction_amount |> String.to_integer()) * 100}
 
       true ->
         {:invalid, nil}
