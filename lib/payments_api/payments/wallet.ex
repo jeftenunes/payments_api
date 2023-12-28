@@ -1,12 +1,12 @@
 defmodule PaymentsApi.Payments.Wallet do
-  alias PaymentsApi.Payments.Wallet
   use Ecto.Schema
+
+  alias PaymentsApi.Payments.{Wallet, User}
 
   import Ecto.Query, warn: false
   import Ecto.Changeset
 
   schema "wallets" do
-    field :balance, :integer
     field :currency, :string
 
     belongs_to(:user, PaymentsApi.Payments.User)
@@ -14,7 +14,7 @@ defmodule PaymentsApi.Payments.Wallet do
     timestamps()
   end
 
-  @available_fields [:user_id, :balance, :currency]
+  @available_fields [:user_id, :currency]
 
   @doc false
   def changeset(wallet, attrs) do
@@ -34,8 +34,16 @@ defmodule PaymentsApi.Payments.Wallet do
   def build_fetch_wallets_qry(source_id, recipient_id) do
     from(credit_wallet in Wallet,
       join: debit_wallet in Wallet,
-      on: credit_wallet.id == ^recipient_id and debit_wallet.id == ^source_id,
+      on: credit_wallet.id == ^source_id and debit_wallet.id == ^recipient_id,
       select: %{source: debit_wallet, recipient: credit_wallet}
+    )
+  end
+
+  def build_find_user_by_wallet_id_qry(wallet_id) do
+    from(u in User,
+      join: w in Wallet,
+      on: u.id == w.user_id,
+      where: w.id == ^wallet_id
     )
   end
 end

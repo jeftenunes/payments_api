@@ -1,13 +1,13 @@
 defmodule PaymentsApi.Payments.Helpers.BalanceHelper do
   alias PaymentsApi.Payments.Parsers.MoneyParser
 
-  def sum_balance_amount(transaction, wallet_id, acc) when transaction.recipient == wallet_id do
+  def sum_balance_amount(transaction, acc) when transaction.type === "CREDIT" do
     parsed_amount = build_amount_value(transaction.amount)
 
     acc + parsed_amount
   end
 
-  def sum_balance_amount(transaction, wallet_id, acc) when transaction.recipient != wallet_id do
+  def sum_balance_amount(transaction, acc) when transaction.type === "DEBIT" do
     parsed_amount = build_amount_value(transaction.amount)
 
     acc - parsed_amount

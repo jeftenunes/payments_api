@@ -3,7 +3,7 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
   def maybe_parse_amount_from_string(amount) do
     cond do
       String.match?(amount, ~r/^0,\d{1,2}$/) ->
-        IO.inspect("2")
+        IO.inspect("2XXX")
 
         parsed =
           String.replace(amount, ",", "")
@@ -14,7 +14,7 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^\d+,\d{1,2}$/) ->
-        IO.inspect("3")
+        IO.inspect("3XXX")
 
         parsed =
           String.replace(amount, ",", "")
@@ -24,7 +24,7 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^0[^.]\d+$/) ->
-        IO.inspect("1")
+        IO.inspect("1XXX")
 
         prepared_str =
           String.replace_leading(amount, "0", "")
@@ -35,7 +35,7 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^0.\d{1,2}$/) ->
-        IO.inspect("4")
+        IO.inspect("4XXX")
 
         parsed =
           String.replace(amount, ".", "")
@@ -46,7 +46,7 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^0,\d{1,2}$/) ->
-        IO.inspect("5")
+        IO.inspect("5XXX")
 
         parsed =
           String.replace(amount, ",", "")
@@ -56,18 +56,8 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
 
         {:valid, parsed}
 
-      String.match?(amount, ~r/^\d+.\d{1,2}$/) ->
-        IO.inspect("6")
-
-        parsed =
-          String.replace(amount, ".", "")
-          |> String.pad_trailing(3, "0")
-          |> String.to_integer()
-
-        {:valid, parsed}
-
       String.match?(amount, ~r/^\d+$/) ->
-        IO.inspect("7")
+        IO.inspect("7XXX")
 
         prepared_str =
           "#{String.replace(amount, ".", "")}00"
@@ -76,12 +66,21 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
 
         {:valid, parsed}
 
+      String.match?(amount, ~r/^\d+.\d{1,2}$/) ->
+        IO.inspect("6XXX")
+
+        parsed =
+          String.replace(amount, ".", "")
+          |> String.pad_trailing(3, "0")
+          |> String.to_integer()
+
+        {:valid, parsed}
+
       true ->
-        {:invalid, nil}
+        {:invalid, ["cannot parse amount | #{amount}"]}
     end
   end
 
-  @spec maybe_parse_amount_from_integer(integer()) :: {:valid, String.t()} | {:invalid, nil}
   def maybe_parse_amount_from_integer(amount) do
     amount
     |> Integer.to_string()

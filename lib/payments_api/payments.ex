@@ -56,45 +56,80 @@ defmodule PaymentsApi.Payments do
     source_id = String.to_integer(attrs.source)
     recipient_id = String.to_integer(attrs.recipient)
 
-    with initial_transaction_state <- build_initial_transaction_state(attrs),
-         %{source: source, recipient: recipient} = summary <-
-           retrieve_transaction_summary(source_id, recipient_id) do
-      exchange_rate = retrieve_exchange_rate(source.currency, recipient.currency)
+    with %{source: source, recipient: recipient} = wallets <-
+           retrieve_transaction_wallets(source_id, recipient_id) do
+      initial_debit_transaction_state = build_initial_transaction_state(attrs, source_id, "DEBIT")
 
-      initial_transaction_state =
+      initial_credit_transaction_state =
+        build_initial_transaction_state(attrs, recipient_id, "CREDIT")
+
+      exchange_rate =
+        retrieve_exchange_rate(source.currency, recipient.currency)
+
+      {:valid, credit_transaction_amount} =
+        MoneyParser.maybe_parse_amount_from_string(attrs.amount)
+
+      {:valid, credit_transaction_amount} =
+        (MoneyParser.maybe_parse_amount_from_integer(credit_transaction_amount) * exchange_rate)
+        |> :erlang.float_to_binary(decimals: 2)
+        |> MoneyParser.maybe_parse_amount_from_string()
+
+      {:valid, parsed_exchange_rate} =
+        ExchangeRate.parse_exchange_rate_to_db(to_string(exchange_rate))
+
+      initial_debit_transaction_state =
         Map.put(
-          initial_transaction_state,
+          initial_debit_transaction_state,
           :exchange_rate,
-          ExchangeRate.parse_exchange_rate_to_db(exchange_rate)
+          100
         )
 
-      {:ok, transaction_amount} =
-        apply_exchange_rate(attrs.amount, exchange_rate)
-
-      {:valid, transaction_amount} =
-        MoneyParser.maybe_parse_amount_from_string(to_string(transaction_amount))
-
-      initial_transaction_state =
+      initial_credit_transaction_state =
         Map.put(
-          initial_transaction_state,
-          :amount,
-          transaction_amount
+          initial_credit_transaction_state,
+          :exchange_rate,
+          parsed_exchange_rate
         )
 
-      IO.inspect(initial_transaction_state)
+      with {:valid, transaction_amount} <-
+             MoneyParser.maybe_parse_amount_from_string(attrs.amount) do
+        initial_debit_transaction_state =
+          Map.put(
+            initial_debit_transaction_state,
+            :amount,
+            transaction_amount
+          )
 
-      op_result =
-        %Transaction{}
-        |> Transaction.changeset(initial_transaction_state)
-        |> Repo.insert()
+        initial_credit_transaction_state =
+          Map.put(
+            initial_credit_transaction_state,
+            :amount,
+            credit_transaction_amount
+          )
 
-      map_response({op_result, summary})
+        {:ok, debit_op_result} =
+          %Transaction{}
+          |> Transaction.changeset(initial_debit_transaction_state)
+          |> Repo.insert()
+
+        initial_credit_transaction_state =
+          Map.put(
+            initial_credit_transaction_state,
+            :origin_transaction_id,
+            debit_op_result.id
+          )
+
+        credit_op_result =
+          %Transaction{}
+          |> Transaction.changeset(initial_credit_transaction_state)
+          |> Repo.insert()
+
+        map_response({credit_op_result, wallets})
+      else
+        {:invalid, errors} -> errors
+      end
     else
-      errors when is_list(errors) ->
-        errors
-
-      nil ->
-        ["source or recipient wallet does not exist"]
+      nil -> ["source or recipient wallet does not exist"]
     end
   end
 
@@ -112,21 +147,33 @@ defmodule PaymentsApi.Payments do
   def process_transaction() do
     retrieve_transactions_to_process()
     |> Enum.map(&TransactionValidator.maybe_validate_transaction(&1))
-    |> Enum.each(fn validation_result ->
-      case validation_result do
-        {:valid, transaction} ->
-          update_transaction_status(transaction, "PROCESSED")
+    |> Enum.reduce(%{}, fn validation_result, acc ->
+      {debit_processed, credit_processed} =
+        case validation_result do
+          {:valid, transaction} ->
+            {:ok, debit} = update_transaction_status(transaction, "PROCESSED")
+            {:ok, credit} = process_credit_transaction(transaction.id)
+            {debit, credit}
 
-        {:invalid, transaction} ->
-          update_transaction_status(transaction, "REFUSED")
-      end
+          {:invalid, transaction} ->
+            update_transaction_status(transaction, "REFUSED")
+        end
+
+      acc = Map.put(acc, debit_processed.id, debit_processed)
+      acc = Map.put(acc, credit_processed.id, credit_processed)
+
+      acc
     end)
   end
 
-  def retrieve_total_worth_for_user(%{id: id, currency: _currency} = params) do
-    Transaction.build_find_transaction_history_for_user_qry(id)
-    |> Repo.all()
-    |> aggregate_user_transaction_summary(params)
+  def retrieve_total_worth_for_user(%{id: id, currency: currency} = params) do
+    with true <- Currencies.is_supported?(currency) do
+      Transaction.build_find_transaction_history_for_user_qry(id)
+      |> Repo.all()
+      |> aggregate_user_transaction_summary(params)
+    else
+      _ -> ["Currencies not supported"]
+    end
   end
 
   def get_user(id) do
@@ -164,15 +211,7 @@ defmodule PaymentsApi.Payments do
           |> Repo.insert()
 
         {:ok, _} =
-          create_transaction(
-            %{
-              amount: "10000",
-              source: to_string(wallet.id),
-              recipient: to_string(wallet.id),
-              description: "FIRST LOAD"
-            },
-            "PROCESSED"
-          )
+          load_wallet(wallet.id)
 
         {:ok, wallet}
 
@@ -184,70 +223,99 @@ defmodule PaymentsApi.Payments do
     end
   end
 
+  def find_user_by_wallet_id_qry(wallet_id) do
+    Wallet.build_find_user_by_wallet_id_qry(wallet_id)
+    |> Repo.one!()
+  end
+
   ## helpers
+  defp process_credit_transaction(origin_transaction_id) do
+    Transaction.build_find_transaction_history_by_origin_qry(origin_transaction_id)
+    |> Repo.one!()
+    |> Transaction.changeset(%{status: "PROCESSED"})
+    |> Repo.update()
+  end
+
+  defp load_wallet(wallet_id) do
+    {:valid, parsed_exchange_rate} =
+      ExchangeRate.parse_exchange_rate_to_db("1.0")
+
+    {:valid, initial_amount} = MoneyParser.maybe_parse_amount_from_string("100")
+
+    first_transaction = %{
+      type: "CREDIT",
+      status: "PROCESSED",
+      wallet_id: wallet_id,
+      amount: initial_amount,
+      description: "FIRST LOAD",
+      exchange_rate: parsed_exchange_rate
+    }
+
+    %Transaction{}
+    |> Transaction.changeset(first_transaction)
+    |> Repo.insert()
+  end
+
   defp aggregate_user_transaction_summary([], %{id: user_id, currency: currency}),
-    do: %{user_id: user_id, currency: currency, total_worth: 0}
+    do: %{user_id: user_id, currency: currency, total_worth: 0, exchange_rate: 0}
 
   defp aggregate_user_transaction_summary(wallets_transactions, %{
          id: _user_id,
          currency: currency
        }) do
-    wallets_transactions
-    |> Enum.group_by(fn transaction -> transaction.wallet_id end)
-    |> Enum.reduce([], fn {wallet_id, transactions}, acc ->
-      acc =
-        [
-          Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc ->
-            %{
-              user_id: transaction.user_id,
-              currency: transaction.currency,
-              wallet_id: transaction.wallet_id,
-              amount:
-                BalanceHelper.sum_balance_amount(
-                  transaction,
-                  wallet_id,
-                  transaction_acc.amount
-                )
-            }
-          end)
-          | acc
-        ]
+    user_total_worth =
+      wallets_transactions
+      |> Enum.group_by(fn transaction -> transaction.wallet_id end)
+      |> Enum.reduce([], fn {_wallet_id, transactions}, acc ->
+        acc =
+          [
+            Enum.reduce(transactions, %{amount: 0}, fn transaction, transaction_acc ->
+              %{
+                user_id: transaction.user_id,
+                currency: transaction.currency,
+                wallet_id: transaction.wallet_id,
+                amount:
+                  BalanceHelper.sum_balance_amount(
+                    transaction,
+                    transaction_acc.amount
+                  )
+              }
+            end)
+            | acc
+          ]
 
-      acc
-    end)
-    |> Enum.map(fn transaction ->
-      %{
-        currency: transaction.currency,
-        user_id: transaction.user_id,
-        wallet_id: transaction.wallet_id,
-        amount: transaction.amount
-      }
-    end)
-    |> Enum.reduce(
-      %{currency: currency, user_id: nil, total_worth: 0, exchange_rate: 0},
-      fn summary, acc ->
-        exchange_rate =
-          retrieve_exchange_rate(summary.currency, currency) |> String.to_float()
+        acc
+      end)
+      |> Enum.reduce(
+        %{currency: currency, user_id: nil, total_worth: 0, exchange_rate: 0},
+        fn summary, acc ->
+          exchange_rate =
+            retrieve_exchange_rate(summary.currency, currency)
 
-        %{
-          acc
-          | user_id: summary.user_id,
-            exchange_rate: exchange_rate,
-            total_worth: summary.amount + acc.total_worth
-        }
-      end
-    )
+          %{
+            acc
+            | user_id: summary.user_id,
+              exchange_rate: exchange_rate,
+              total_worth: exchange_rate * summary.amount + acc.total_worth
+          }
+        end
+      )
+
+    %{
+      user_total_worth
+      | total_worth: :erlang.float_to_binary(user_total_worth.total_worth, decimals: 2)
+    }
   end
 
   defp retrieve_exchange_rate(from_currency, to_currency) when from_currency == to_currency,
-    do: 1
+    do: "1.0" |> String.to_float()
 
   defp retrieve_exchange_rate(from_currency, to_currency) do
-    ExchangeRate.retrieve_exchange_rate(from_currency, to_currency)
+    ExchangeRate.retrieve_exchange_rate(from_currency, to_currency) |> String.to_float()
   end
 
   defp build_wallet_initial_state(attrs) do
-    %Wallet{balance: 0, currency: attrs.currency, user_id: String.to_integer(attrs.user_id)}
+    %Wallet{currency: attrs.currency, user_id: String.to_integer(attrs.user_id)}
   end
 
   defp build_users_list(data) do
@@ -270,34 +338,23 @@ defmodule PaymentsApi.Payments do
     end)
   end
 
-  defp build_initial_transaction_state(%{
-         source: source,
-         status: status,
-         recipient: recipient,
-         description: description
-       }) do
+  defp build_initial_transaction_state(
+         %{
+           status: status,
+           description: description
+         },
+         wallet_id,
+         type
+       ) do
     %{
+      type: type,
       status: status,
-      description: description,
-      source: String.to_integer(source),
-      recipient: String.to_integer(recipient)
+      wallet_id: wallet_id,
+      description: description
     }
   end
 
-  defp apply_exchange_rate(amount, exchange_rate) do
-    {:valid, exchange_rate} = MoneyParser.maybe_parse_amount_from_string(exchange_rate)
-    exchange_rate = MoneyParser.maybe_parse_amount_from_integer(exchange_rate)
-
-    case MoneyParser.maybe_parse_amount_from_string(amount) do
-      {:valid, parsed_amount} ->
-        {:ok, parsed_amount * exchange_rate}
-
-      {:invalid, _} ->
-        ["transaction amount incorrectly formatted."]
-    end
-  end
-
-  defp retrieve_transaction_summary(source_id, recipient_id) do
+  defp retrieve_transaction_wallets(source_id, recipient_id) do
     Wallet.build_fetch_wallets_qry(source_id, recipient_id)
     |> Repo.one()
   end

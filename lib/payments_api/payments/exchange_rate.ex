@@ -3,12 +3,11 @@ defmodule PaymentsApi.Payments.ExchangeRate do
   alias PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
 
   def parse_exchange_rate(exchange_rate) do
-    MoneyParser.maybe_parse_amount_from_string(exchange_rate)
+    exchange_rate |> String.to_float()
   end
 
   def parse_exchange_rate_to_db(exchange_rate) do
-    String.replace(exchange_rate, ".", "")
-    |> String.to_integer()
+    MoneyParser.maybe_parse_amount_from_string(exchange_rate)
   end
 
   def retrieve_exchange_rate(from_currency, to_currency) do
