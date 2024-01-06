@@ -53,7 +53,10 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   end
 
   @impl true
-  def handle_info(:retrieve_exchange_rates, state) do
+  def handle_info(
+        :retrieve_exchange_rates,
+        %{exchange_rate: _exchange_rate, supervisor: _supervisor} = state
+      ) do
     exchange_rates =
       Enum.map(@supported_currencies, fn currency ->
         currencies_to_compare = Enum.filter(@supported_currencies, &(&1 != currency))
@@ -76,13 +79,34 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   end
 
   @impl true
-  def handle_call({:get_exchange_rate, from_currency, to_currency}, _from, state) do
+  def handle_info(
+        :retrieve_exchange_rates,
+        %{supervisor: _supervisor} = state
+      ) do
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_call(
+        {:get_exchange_rate, from_currency, to_currency},
+        _from,
+        %{exchange_rate: _exchange_rate, supervisor: _supervisor} = state
+      ) do
     exchange_rate =
       Map.get(state, :exchange_rates)[Currencies.get_currency_atom(from_currency)]
       |> Enum.filter(fn currency_rate -> currency_rate.to_currency == to_currency end)
       |> List.first()
 
     {:reply, exchange_rate, state}
+  end
+
+  @impl true
+  def handle_call(
+        {:get_exchange_rate, _from_currency, _to_currency},
+        _from,
+        %{supervisor: _supervisor} = state
+      ) do
+    {:reply, {:error, "error retrieving exchanges"}, state}
   end
 
   ## helpers

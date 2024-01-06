@@ -19,37 +19,9 @@ defmodule PaymentsApi.Payments do
     Helpers.BalanceHelper
   }
 
-  @doc """
-  Gets a single transaction.
-
-  Returns nil if the Transaction does not exist.
-
-  ## Examples
-
-      iex> get_transaction(123)
-      %Transaction{}
-
-      iex> get_transaction!456)
-      nil
-
-  """
   def get_transaction(id), do: Repo.get(Transaction, id)
 
-  @doc """
-  Creates a transaction.
-
-  ## Examples
-
-      iex> create_transaction(%{field: value})
-      {:ok, %Transaction{}}
-
-      iex> create_transaction(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_transaction(%{} = attrs, transaction_status \\ "PENDING") do
-    ## buscar as carteiras e a rate
-
     attrs = Map.put_new(attrs, :description, nil)
     attrs = Map.put_new(attrs, :status, transaction_status)
 
@@ -57,14 +29,13 @@ defmodule PaymentsApi.Payments do
     recipient_id = String.to_integer(attrs.recipient)
 
     with %{source: source, recipient: recipient} = wallets <-
-           retrieve_transaction_wallets(source_id, recipient_id) do
+           retrieve_transaction_wallets(source_id, recipient_id),
+         exchange_rate when is_float(exchange_rate) <-
+           retrieve_exchange_rate(source.currency, recipient.currency) do
       initial_debit_transaction_state = build_initial_transaction_state(attrs, source_id, "DEBIT")
 
       initial_credit_transaction_state =
         build_initial_transaction_state(attrs, recipient_id, "CREDIT")
-
-      exchange_rate =
-        retrieve_exchange_rate(source.currency, recipient.currency)
 
       {:valid, credit_transaction_amount} =
         MoneyParser.maybe_parse_amount_from_string(attrs.amount)
@@ -126,10 +97,17 @@ defmodule PaymentsApi.Payments do
 
         map_response({credit_op_result, wallets})
       else
-        {:invalid, errors} -> errors
+        {:invalid, errors} ->
+          errors
       end
     else
-      nil -> ["source or recipient wallet does not exist"]
+      {:error, _message} ->
+        [
+          "Error retrieving exchange rates. You still can transfer money between same currency wallets."
+        ]
+
+      nil ->
+        ["source or recipient wallet does not exist"]
     end
   end
 
@@ -289,18 +267,42 @@ defmodule PaymentsApi.Payments do
       |> Enum.reduce(
         %{currency: currency, user_id: nil, total_worth: 0, exchange_rate: 0},
         fn summary, acc ->
-          exchange_rate =
-            retrieve_exchange_rate(summary.currency, currency)
+          case retrieve_exchange_rate(summary.currency, currency) do
+            {:error, message} ->
+              Map.put(acc, :in_error, message)
 
-          %{
-            acc
-            | user_id: summary.user_id,
-              exchange_rate: exchange_rate,
-              total_worth: exchange_rate * summary.amount + acc.total_worth
-          }
+            exchange_rate when is_float(exchange_rate) ->
+              %{
+                acc
+                | user_id: summary.user_id,
+                  exchange_rate: exchange_rate,
+                  total_worth: exchange_rate * summary.amount + acc.total_worth
+              }
+          end
         end
       )
 
+    build_user_total_worth(user_total_worth)
+  end
+
+  defp build_user_total_worth(
+         %{
+           user_id: _user_id,
+           exchange_rate: _exchange_rate,
+           total_worth: _total_worth,
+           in_error: message
+         } = user_total_worth
+       ) do
+    [message]
+  end
+
+  defp build_user_total_worth(
+         %{
+           user_id: _user_id,
+           exchange_rate: _exchange_rate,
+           total_worth: _total_worth
+         } = user_total_worth
+       ) do
     %{
       user_total_worth
       | total_worth: :erlang.float_to_binary(user_total_worth.total_worth, decimals: 2)
@@ -308,10 +310,16 @@ defmodule PaymentsApi.Payments do
   end
 
   defp retrieve_exchange_rate(from_currency, to_currency) when from_currency == to_currency,
-    do: "1.0" |> String.to_float()
+    do: String.to_float("1.0")
 
   defp retrieve_exchange_rate(from_currency, to_currency) do
-    ExchangeRate.retrieve_exchange_rate(from_currency, to_currency) |> String.to_float()
+    case ExchangeRate.retrieve_exchange_rate(from_currency, to_currency) do
+      {:error, message} ->
+        {:error, message}
+
+      exchange_rate when is_binary(exchange_rate) ->
+        String.to_float(exchange_rate)
+    end
   end
 
   defp build_wallet_initial_state(attrs) do
