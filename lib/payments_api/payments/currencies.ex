@@ -1,4 +1,4 @@
-defmodule PaymentsApi.Payments.Currencies.Currency do
+defmodule PaymentsApi.Payments.Currencies do
   alias PaymentsApi.Payments.Currencies.ApiWrapper
 
   @currencies %{
@@ -260,7 +260,7 @@ defmodule PaymentsApi.Payments.Currencies.Currency do
     end
   end
 
-  defp get_supported_currencies do
+  def get_supported_currencies do
     are_supported_currencies_values =
       Enum.all?(@supported_currencies, fn currency ->
         Map.has_key?(@currencies, currency)

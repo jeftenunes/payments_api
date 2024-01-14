@@ -11,7 +11,7 @@ defmodule PaymentsApi.PaymentsFixtures do
     {:ok, wallet} =
       attrs
       |> Enum.into(%{})
-      |> PaymentsApi.Accounts.create_wallet()
+      |> PaymentsApi.Payments.create_wallet()
 
     wallet
   end
@@ -26,5 +26,17 @@ defmodule PaymentsApi.PaymentsFixtures do
       |> PaymentsApi.Payments.create_transaction()
 
     transaction
+  end
+
+  @doc """
+  Generate a user.
+  """
+  def user_fixture(attrs \\ %{}) do
+    {:ok, user} =
+      attrs
+      |> Enum.into(%{})
+      |> PaymentsApi.Payments.create_user()
+
+    user
   end
 end

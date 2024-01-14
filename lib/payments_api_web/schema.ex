@@ -14,6 +14,12 @@ defmodule PaymentsApiWeb.Schema do
 
   import_types(PaymentsApiWeb.Schema.Types.TotalWorth)
 
+  import_types(PaymentsApiWeb.Schema.Types.ExchangeRate)
+  import_types(PaymentsApiWeb.Schema.Types.ConfiguredExchangeRates)
+
+  import_types(PaymentsApiWeb.Schema.Subscriptions.UserWorth)
+  import_types(PaymentsApiWeb.Schema.Subscriptions.ExchangeRate)
+
   @desc "Queries resources"
   query do
     import_fields(:users_queries)
@@ -25,5 +31,11 @@ defmodule PaymentsApiWeb.Schema do
     import_fields(:users_mutations)
     import_fields(:wallets_mutations)
     import_fields(:transactions_mutations)
+  end
+
+  @desc "Follows state changes - real time"
+  subscription do
+    import_fields(:user_worth_subscriptions)
+    import_fields(:exchange_rate_subscriptions)
   end
 end

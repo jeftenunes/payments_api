@@ -36,8 +36,11 @@ defmodule PaymentsApi.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(PaymentsApi.Repo)
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(PaymentsApi.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+
+    :ok
   end
 
   @doc """

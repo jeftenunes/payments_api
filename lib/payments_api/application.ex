@@ -18,6 +18,8 @@ defmodule PaymentsApi.Application do
       {Finch, name: PaymentsApi.Finch},
       # Start the Endpoint (http/https)
       PaymentsApiWeb.Endpoint,
+      PaymentsApi.UserTotalWorth.Store,
+      {Absinthe.Subscription, PaymentsApiWeb.Endpoint},
       PaymentsApi.Payments.PaymentProcessingServer,
       PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
       # Start a worker by calling: PaymentsApi.Worker.start_link(arg)

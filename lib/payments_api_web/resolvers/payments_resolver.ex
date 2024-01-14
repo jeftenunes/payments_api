@@ -9,7 +9,7 @@ defmodule PaymentsApiWeb.Resolvers.PaymentsResolver do
       {:ok, transaction} ->
         {:ok, transaction}
 
-      errors ->
+      errors when is_list(errors) ->
         ErrorsHelper.build_graphql_error(errors)
     end
   end

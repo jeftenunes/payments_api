@@ -31,5 +31,21 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
        id: params.user_id,
        currency: params.currency
      })}
+
+    case Payments.retrieve_total_worth_for_user(%{
+           id: params.user_id,
+           currency: params.currency
+         }) do
+      %{
+        currency: _currency,
+        exchange_rate: _exchange_rate,
+        user_id: _user_id,
+        total_worth: _total_worth
+      } = total_worth ->
+        {:ok, total_worth}
+
+      errors when is_list(errors) ->
+        ErrorsHelper.build_graphql_error(errors)
+    end
   end
 end

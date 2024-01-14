@@ -7,7 +7,7 @@ defmodule PaymentsApi.Payments.Currencies.ApiWrapper do
   def fetch(%{from_currency: _from_currency, to_currency: _to_currency} = query_params) do
     case send_request(query_params) do
       {:ok, response} -> deserialize_http_response(response)
-      _ -> raise "TODO:CORRIGIR"
+      _ -> {:error, "error retrieving exchange rate"}
     end
   end
 
