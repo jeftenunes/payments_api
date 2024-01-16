@@ -16,6 +16,8 @@ defmodule PaymentsApi.DataCase do
 
   use ExUnit.CaseTemplate
 
+  alias PaymentsApi.PaymentsFixtures
+
   using do
     quote do
       alias PaymentsApi.Repo
@@ -30,6 +32,10 @@ defmodule PaymentsApi.DataCase do
   setup tags do
     PaymentsApi.DataCase.setup_sandbox(tags)
     :ok
+  end
+
+  setup _context do
+    PaymentsFixtures.user_fixture(%{email: "test@email.com"})
   end
 
   @doc """

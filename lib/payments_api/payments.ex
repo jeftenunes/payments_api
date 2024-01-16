@@ -291,7 +291,7 @@ defmodule PaymentsApi.Payments do
            exchange_rate: _exchange_rate,
            total_worth: _total_worth,
            in_error: message
-         } = user_total_worth
+         } = _user_total_worth
        ) do
     [message]
   end
@@ -310,7 +310,7 @@ defmodule PaymentsApi.Payments do
   end
 
   defp retrieve_exchange_rate(from_currency, to_currency) when from_currency == to_currency,
-    do: String.to_float("1.0")
+    do: 1.0
 
   defp retrieve_exchange_rate(from_currency, to_currency) do
     case ExchangeRate.retrieve_exchange_rate(from_currency, to_currency) do
