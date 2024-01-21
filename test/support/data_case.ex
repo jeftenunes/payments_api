@@ -41,7 +41,7 @@ defmodule PaymentsApi.DataCase do
     PaymentsFixtures.wallet_fixture(%{user_id: to_string(user1.id), currency: "BRL"})
     PaymentsFixtures.wallet_fixture(%{user_id: to_string(user1.id), currency: "CAD"})
 
-    _ = PaymentsFixtures.user_fixture(%{email: "test1@email.com"})
+    PaymentsFixtures.user_fixture(%{email: "test1@email.com"})
 
     :ok
   end
