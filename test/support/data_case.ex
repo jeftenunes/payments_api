@@ -20,22 +20,30 @@ defmodule PaymentsApi.DataCase do
 
   using do
     quote do
-      alias PaymentsApi.Repo
-
       import Ecto
-      import Ecto.Changeset
       import Ecto.Query
+      import Ecto.Changeset
       import PaymentsApi.DataCase
+
+      alias PaymentsApi.Repo
     end
   end
 
   setup tags do
     PaymentsApi.DataCase.setup_sandbox(tags)
+
     :ok
   end
 
   setup _context do
-    PaymentsFixtures.user_fixture(%{email: "test@email.com"})
+    user1 = PaymentsFixtures.user_fixture(%{email: "test@email.com"})
+
+    PaymentsFixtures.wallet_fixture(%{user_id: to_string(user1.id), currency: "BRL"})
+    PaymentsFixtures.wallet_fixture(%{user_id: to_string(user1.id), currency: "CAD"})
+
+    _ = PaymentsFixtures.user_fixture(%{email: "test1@email.com"})
+
+    :ok
   end
 
   @doc """

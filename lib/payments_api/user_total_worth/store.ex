@@ -14,7 +14,7 @@ defmodule PaymentsApi.UserTotalWorth.Store do
     Agent.start_link(fn -> state end, opts)
   end
 
-  def get_user_worth_summary(agent \\ @default_name, user_id) do
+  def get_user_by_worth_summary(agent \\ @default_name, user_id) do
     Agent.get(agent, &Map.get(&1, user_id, %{}))
   end
 

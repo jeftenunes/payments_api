@@ -154,8 +154,15 @@ defmodule PaymentsApi.Payments do
     end
   end
 
-  def get_user(id) do
+  def get_user_by(%{id: id}) do
     User.find_users(id)
+    |> Repo.all()
+    |> build_users_list()
+    |> List.first()
+  end
+
+  def get_user_by(%{email: email}) do
+    User.find_user_by_email(email)
     |> Repo.all()
     |> build_users_list()
     |> List.first()

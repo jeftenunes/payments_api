@@ -22,7 +22,7 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
   end
 
   def find_user_by(params, _) do
-    {:ok, Payments.get_user(String.to_integer(params.id))}
+    {:ok, Payments.get_user_by(%{email: params.email})}
   end
 
   def find_user_total_worth_by(params, _) do

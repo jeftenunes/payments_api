@@ -5,8 +5,7 @@ defmodule PaymentsApiWeb.Schema.Queries.Users do
 
   object :users_queries do
     field :user, :user do
-      arg(:id, non_null(:id))
-      arg(:currency, :string)
+      arg(:email, non_null(:string))
 
       resolve(&UsersResolver.find_user_by/2)
     end
