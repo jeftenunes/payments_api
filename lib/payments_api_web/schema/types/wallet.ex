@@ -4,7 +4,6 @@ defmodule PaymentsApiWeb.Schema.Types.Wallet do
   object :wallet do
     field :id, :id
     field :user_id, :id
-    field :balance, :string
     field :currency, :string
   end
 end
