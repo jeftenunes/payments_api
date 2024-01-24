@@ -16,8 +16,11 @@ defmodule PaymentsApi.Payments.ExchangeRate do
 
   defp do_retrieve_exchange_rate(from_currency, to_currency) do
     case ExchangeRateMonitorServer.get_rate_for_currency(from_currency, to_currency) do
-      {:error, reason} -> {:error, reason}
-      exchange_rate -> exchange_rate.exchange_rate
+      {:error, reason} ->
+        {:error, reason}
+
+      exchange_rate ->
+        exchange_rate.exchange_rate
     end
   end
 end
