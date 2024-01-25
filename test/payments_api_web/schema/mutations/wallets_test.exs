@@ -28,10 +28,8 @@ defmodule PaymentsApiWeb.Schema.Mutations.WalletsTest do
                )
 
       # assert
-      id = usr.id
-      assert data["createWallet"]["userId"] == to_string(id)
-
-      IO.inspect(data["createWallet"])
+      id = to_string(usr.id)
+      assert %{"currency" => "USD", "id" => _, "userId" => id} = data["createWallet"]
     end
   end
 end

@@ -21,7 +21,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.UsersTest do
                )
 
       # assert
-      assert data["createUser"]["email"] == "email@test.com"
+      assert %{"email" => "email@test.com", "id" => _} = data["createUser"]
     end
   end
 end
