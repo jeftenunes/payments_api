@@ -1,6 +1,8 @@
 defmodule PaymentsApiWeb.Schema.Mutations.UsersTest do
   use PaymentsApi.DataCase
 
+  alias PaymentsApi.PaymentsFixtures
+
   @create_user_doc """
     mutation CreateUser($email: String!) {
       createUser(email: $email) {
@@ -22,6 +24,22 @@ defmodule PaymentsApiWeb.Schema.Mutations.UsersTest do
 
       # assert
       assert %{"email" => "email@test.com", "id" => _} = data["createUser"]
+    end
+
+    test "should create an user when the user's email is already taken" do
+      # act
+      PaymentsFixtures.user_fixture(%{email: "email@test.com"})
+
+      assert {:ok, %{errors: errors, data: data}} =
+               Absinthe.run(@create_user_doc, PaymentsApiWeb.Schema,
+                 variables: %{
+                   "email" => "email@test.com"
+                 }
+               )
+
+      # assert
+      assert data["createdUser"] == nil
+      assert List.first(errors)[:message] == "E-mail already taken"
     end
   end
 end

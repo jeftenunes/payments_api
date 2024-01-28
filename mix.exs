@@ -48,7 +48,8 @@ defmodule PaymentsApi.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:absinthe, "~> 1.7"},
       {:absinthe_plug, "~> 1.5"},
-      {:absinthe_phoenix, "~> 2.0"}
+      {:absinthe_phoenix, "~> 2.0"},
+      {:mox, "~> 0.5.0", only: :test}
     ]
   end
 

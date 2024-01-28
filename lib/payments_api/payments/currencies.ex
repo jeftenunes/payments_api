@@ -1,6 +1,8 @@
 defmodule PaymentsApi.Payments.Currencies do
   alias PaymentsApi.Payments.Currencies.ApiWrapper
 
+  @behaviour PaymentsApi.Payments.Currencies.CurrenciesBehaviour
+
   @currencies %{
     AED: %{name: "UAE Dirham", symbol: "د.إ", exponent: 2, number: 784},
     AFN: %{name: "Afghani", symbol: "؋", exponent: 2, number: 971},
