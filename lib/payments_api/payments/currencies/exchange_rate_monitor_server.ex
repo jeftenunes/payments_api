@@ -120,7 +120,6 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
       to_currencies
       |> Enum.map(&Currencies.fetch_exchange_rate_from_api(from_currency, &1))
 
-    IO.inspect(ratings_for_currency)
     {from_currency, ratings_for_currency}
   end
 

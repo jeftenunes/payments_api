@@ -1,12 +1,12 @@
 ExUnit.start()
 Ecto.Adapters.SQL.Sandbox.mode(PaymentsApi.Repo, :manual)
 
-Mox.defmock(CurrenciesBehaviourMock,
-  for: PaymentsApi.Payments.Currencies.CurrenciesBehaviour
+Mox.defmock(MockAlphaVantageApiWrapper,
+  for: PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper
 )
 
 Application.put_env(
   :payments_api,
-  :currencies,
-  CurrenciesBehaviourMock
+  :alpha_vantage_api_wrapper,
+  MockAlphaVantageApiWrapper
 )

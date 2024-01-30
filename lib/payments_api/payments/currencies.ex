@@ -1,7 +1,5 @@
 defmodule PaymentsApi.Payments.Currencies do
-  alias PaymentsApi.Payments.Currencies.ApiWrapper
-
-  @behaviour PaymentsApi.Payments.Currencies.CurrenciesBehaviour
+  alias PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper
 
   @currencies %{
     AED: %{name: "UAE Dirham", symbol: "د.إ", exponent: 2, number: 784},
@@ -248,7 +246,8 @@ defmodule PaymentsApi.Payments.Currencies do
   @spec fetch_exchange_rate_from_api(from_currency :: String.t(), to_currency :: String.t()) ::
           map()
   def fetch_exchange_rate_from_api(from_currency, to_currency) do
-    with response <- ApiWrapper.fetch(%{from_currency: from_currency, to_currency: to_currency}) do
+    with response <-
+           api_wrapper().fetch(%{from_currency: from_currency, to_currency: to_currency}) do
       response
     end
   end
@@ -262,6 +261,7 @@ defmodule PaymentsApi.Payments.Currencies do
     end
   end
 
+  @spec get_supported_currencies() :: map()
   def get_supported_currencies do
     are_supported_currencies_values =
       Enum.all?(@supported_currencies, fn currency ->
@@ -274,4 +274,7 @@ defmodule PaymentsApi.Payments.Currencies do
     @supported_currencies
     |> Enum.reduce(%{}, fn curr, acc -> Map.put(acc, curr, @currencies[curr]) end)
   end
+
+  defp api_wrapper(),
+    do: Application.get_env(:payments_api, :alpha_vantage_api_wrapper, AlphaVantageApiWrapper)
 end

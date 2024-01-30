@@ -33,9 +33,6 @@ config :logger, level: :warning
 config :phoenix, :plug_init_mode, :runtime
 
 config :payments_api,
-  currencies: CurrenciesBehaviourMock
-
-config :payments_api,
   exchange_rate_cache_expiration_in_seconds: 2,
   supported_currencies: [:CAD, :BRL, :USD],
   alpha_vantage_api_key: "SWV5BYTB8NODLZP8",

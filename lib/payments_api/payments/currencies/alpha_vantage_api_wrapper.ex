@@ -1,4 +1,9 @@
-defmodule PaymentsApi.Payments.Currencies.ApiWrapper do
+defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper do
+  @moduledoc false
+  @callback hello() :: String.t()
+  @callback fetch(map :: map()) :: list()
+  @callback fetch(map :: map()) :: tuple()
+
   @qry_param_function "CURRENCY_EXCHANGE_RATE"
   @api_response_root_node "Realtime Currency Exchange Rate"
   @api_key Application.compile_env(:payments_api, :alpha_vantage_api_key)
@@ -9,6 +14,10 @@ defmodule PaymentsApi.Payments.Currencies.ApiWrapper do
       {:ok, response} -> deserialize_http_response(response)
       _ -> {:error, "error retrieving exchange rate"}
     end
+  end
+
+  def hello() do
+    "Hello world"
   end
 
   defp deserialize_http_response(%Finch.Response{
