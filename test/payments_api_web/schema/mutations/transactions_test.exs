@@ -31,10 +31,10 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
         %{
           bid_price: "1.50",
           ask_price: "2.10",
-          exchange_rate: "2.0",
           to_currency: "USD",
-          last_refreshed: DateTime.now!("Etc/UTC"),
-          from_currency: "CAD"
+          exchange_rate: "2.0",
+          from_currency: "CAD",
+          last_refreshed: DateTime.now!("Etc/UTC")
         }
       end)
 
