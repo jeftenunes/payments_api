@@ -27,7 +27,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       # arrange
       parent = self()
 
-      expect(MockAlphaVantageApiWrapper, :fetch, 100_000, fn _params ->
+      expect(MockAlphaVantageApiWrapper, :fetch, 1000, fn _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -45,7 +45,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       |> Task.await()
 
       # TODO:fix - don't use a timer
-      :timer.sleep(2000)
+      :timer.sleep(5000)
       # act
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
 

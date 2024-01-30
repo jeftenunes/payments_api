@@ -1,6 +1,6 @@
 defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper do
   @moduledoc false
-  @callback hello() :: String.t()
+
   @callback fetch(map :: map()) :: list()
   @callback fetch(map :: map()) :: tuple()
 
@@ -14,10 +14,6 @@ defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper do
       {:ok, response} -> deserialize_http_response(response)
       _ -> {:error, "error retrieving exchange rate"}
     end
-  end
-
-  def hello() do
-    "Hello world"
   end
 
   defp deserialize_http_response(%Finch.Response{
