@@ -44,6 +44,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       end)
       |> Task.await()
 
+      # TODO:fix - don't use a timer
       :timer.sleep(2000)
       # act
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
