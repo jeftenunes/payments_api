@@ -86,13 +86,18 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
       ) do
     exchange_rate =
       Map.get(state, :exchange_rates)[Currencies.get_currency_atom(from_currency)]
-      |> Enum.filter(fn currency_rate -> currency_rate.to_currency == to_currency end)
+      |> Enum.filter(fn currency_rate -> filter_exchange_rates(currency_rate, to_currency) end)
       |> List.first()
 
     {:reply, exchange_rate, state}
   end
 
   ## helpers
+  defp filter_exchange_rates({:error, message}, _to_currency), do: {:error, message}
+
+  defp filter_exchange_rates(currency_rate, to_currency),
+    do: currency_rate.to_currency == to_currency
+
   defp publish_exchange_rates_updates(updated_exchange_rates, %{supervisor: supervisor} = _state) do
     Enum.each(updated_exchange_rates, fn {currency, updated_exchange_rate} ->
       Task.Supervisor.start_child(supervisor, fn ->

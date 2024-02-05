@@ -31,5 +31,23 @@ defmodule PaymentsApiWeb.Schema.Mutations.WalletsTest do
       id = to_string(usr.id)
       assert %{"currency" => "USD", "id" => _, "userId" => id} = data["createWallet"]
     end
+
+    # TODO test unsupported currencies case
+    test "should not create a wallet due to unsupported currencies" do
+      # arrange
+      usr = PaymentsFixtures.user_fixture(%{email: "wallets_test@test.com"})
+
+      # act
+      assert {:ok, %{data: _data, errors: errors}} =
+               Absinthe.run(@create_wallet_doc, PaymentsApiWeb.Schema,
+                 variables: %{
+                   "userId" => usr.id,
+                   "currency" => "EUR"
+                 }
+               )
+
+      # assert
+      assert List.first(errors)[:message] == "Currencies not supported"
+    end
   end
 end
