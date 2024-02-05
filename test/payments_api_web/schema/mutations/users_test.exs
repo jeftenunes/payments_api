@@ -27,9 +27,10 @@ defmodule PaymentsApiWeb.Schema.Mutations.UsersTest do
     end
 
     test "should create an user when the user's email is already taken" do
-      # act
+      # arrange
       PaymentsFixtures.user_fixture(%{email: "email@test.com"})
 
+      # act
       assert {:ok, %{errors: errors, data: data}} =
                Absinthe.run(@create_user_doc, PaymentsApiWeb.Schema,
                  variables: %{
