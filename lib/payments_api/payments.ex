@@ -131,6 +131,8 @@ defmodule PaymentsApi.Payments do
           {:valid, transaction} ->
             {:ok, debit} = update_transaction_status(transaction, "PROCESSED")
             {:ok, credit} = process_credit_transaction(transaction.id)
+            IO.inspect(debit)
+            IO.inspect(credit)
             {debit, credit}
 
           {:invalid, transaction} ->

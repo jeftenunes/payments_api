@@ -123,7 +123,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
                "Error retrieving exchange rates. You still can transfer money between same currency wallets."
     end
 
-    test "should send money from one wallet to another - same currencies and alpha vantage api in error" do
+    test "should send money from one wallet to another - same currencies" do
       # arrange
       stub(MockAlphaVantageApiWrapper, :fetch, fn %{
                                                     to_currency: _to_currency,

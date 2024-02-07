@@ -39,6 +39,7 @@ defmodule PaymentsApi.Payments.PaymentProcessingServer do
       |> Enum.filter(fn {_k, v} -> v.status === "PROCESSED" end)
       |> Enum.each(fn {_k, processed} ->
         usr = Payments.find_user_by_wallet_id_qry(processed.wallet_id)
+
         publish_user_total_worth_updates(supervisor, usr.id)
       end)
     end)
