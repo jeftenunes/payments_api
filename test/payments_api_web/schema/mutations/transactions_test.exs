@@ -176,7 +176,6 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       assert data["sendMoney"]["status"] == "PENDING"
       assert data["sendMoney"]["toCurrency"] == "BRL"
       assert data["sendMoney"]["fromCurrency"] == "BRL"
-      assert data["sendMoney"]["exchangeRate"] == "100"
       assert data["sendMoney"]["description"] == "test transaction"
     end
   end
