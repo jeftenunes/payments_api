@@ -31,7 +31,7 @@ defmodule PaymentsApi.Payments do
     with %{source: source, recipient: recipient} = wallets <-
            retrieve_transaction_wallets(source_id, recipient_id),
          exchange_rate when is_float(exchange_rate) <-
-           retrieve_exchange_rate(source.currency, recipient.currency) do
+           retrieve_exchange_rate(recipient.currency, source.currency) do
       initial_debit_transaction_state = build_initial_transaction_state(attrs, source_id, "DEBIT")
 
       initial_credit_transaction_state =
@@ -39,6 +39,13 @@ defmodule PaymentsApi.Payments do
 
       {:valid, credit_transaction_amount} =
         MoneyParser.maybe_parse_amount_from_string(attrs.amount)
+
+      IO.inspect("credit_transaction_amount: #{credit_transaction_amount}")
+      IO.inspect("exchange_rate: #{exchange_rate}")
+
+      IO.inspect(
+        "MoneyParser.maybe_parse_amount_from_integer(credit_transaction_amount): #{MoneyParser.maybe_parse_amount_from_integer(credit_transaction_amount)}"
+      )
 
       {:valid, credit_transaction_amount} =
         (MoneyParser.maybe_parse_amount_from_integer(credit_transaction_amount) * exchange_rate)
@@ -126,24 +133,35 @@ defmodule PaymentsApi.Payments do
     retrieve_transactions_to_process()
     |> Enum.map(&TransactionValidator.maybe_validate_transaction(&1))
     |> Enum.reduce(%{}, fn validation_result, acc ->
-      {debit_processed, credit_processed} =
+      processing_results =
         case validation_result do
           {:valid, transaction} ->
             {:ok, debit} = update_transaction_status(transaction, "PROCESSED")
             {:ok, credit} = process_credit_transaction(transaction.id)
-            IO.inspect(debit)
-            IO.inspect(credit)
-            {debit, credit}
+
+            {:processed, {debit, credit}}
 
           {:invalid, transaction} ->
             update_transaction_status(transaction, "REFUSED")
+            {:refused, transaction}
         end
 
-      acc = Map.put(acc, debit_processed.id, debit_processed)
-      acc = Map.put(acc, credit_processed.id, credit_processed)
+      acc =
+        build_payment_processing_result(acc, processing_results)
 
       acc
     end)
+  end
+
+  defp build_payment_processing_result(acc, {:refused, refused_transaction}) do
+    Map.put(acc, refused_transaction.id, refused_transaction)
+  end
+
+  defp build_payment_processing_result(acc, {:processed, {debit_processed, credit_processed}}) do
+    acc = Map.put(acc, debit_processed.id, debit_processed)
+    acc = Map.put(acc, credit_processed.id, credit_processed)
+
+    acc
   end
 
   def retrieve_total_worth_for_user(%{id: id, currency: currency} = params) do

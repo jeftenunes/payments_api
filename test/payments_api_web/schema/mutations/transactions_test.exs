@@ -1,7 +1,7 @@
 defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
   use PaymentsApi.DataCase
 
-  alias PaymentsApi.PaymentsFixtures
+  alias PaymentsApi.{PaymentsFixtures, PaymentsHelpers}
 
   import Mox
 
@@ -16,8 +16,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
         recipient,
         toCurrency,
         description,
-        fromCurrency,
-        exchangeRate
+        fromCurrency
       }
     }
   """
@@ -26,14 +25,15 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
     test "should send money from one wallet to another - different currencies" do
       # arrange
       stub(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                    to_currency: _to_currency,
-                                                    from_currency: _from_currency
+                                                    to_currency: to_currency,
+                                                    from_currency: from_currency
                                                   } = params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
           to_currency: "USD",
-          exchange_rate: "2.0",
+          exchange_rate:
+            PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
           from_currency: "CAD",
           last_refreshed: DateTime.now!("Etc/UTC")
         }
