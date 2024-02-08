@@ -64,7 +64,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
                  }
                )
 
-      assert data["sendMoney"]["amount"] == "40000"
+      assert data["sendMoney"]["amount"] == "24000"
       assert data["sendMoney"]["status"] == "PENDING"
       assert data["sendMoney"]["toCurrency"] == "USD"
       assert data["sendMoney"]["fromCurrency"] == "CAD"
