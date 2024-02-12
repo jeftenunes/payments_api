@@ -1,5 +1,5 @@
 defmodule PaymentsApiWeb.Schema.Queries.WalletsTest do
-  use PaymentsApi.DataCase
+  use PaymentsApiWeb.DataCase
 
   alias PaymentsApi.PaymentsFixtures
 

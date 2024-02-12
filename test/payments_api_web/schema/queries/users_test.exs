@@ -1,5 +1,5 @@
 defmodule PaymentsApiWeb.Schema.Queries.UsersTest do
-  use PaymentsApi.DataCase
+  use PaymentsApiWeb.DataCase
 
   @user_by_email_doc """
     query UserByEmail ($email: String!){

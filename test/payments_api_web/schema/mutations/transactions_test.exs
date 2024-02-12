@@ -1,11 +1,30 @@
 defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
-  use PaymentsApi.DataCase
+  use PaymentsApiWeb.DataCase
 
   alias PaymentsApi.{PaymentsFixtures, PaymentsHelpers}
 
   import Mox
 
   setup [:set_mox_global]
+
+  @create_user_doc """
+    mutation CreateUser($email: String!) {
+      createUser(email: $email) {
+        id
+        email
+      }
+    }
+  """
+
+  @create_wallet_doc """
+    mutation CreateWallet($userId: ID!, $currency: String!) {
+      createWallet(userId: $userId, currency: $currency) {
+        id,
+        userId,
+        currency
+      }
+    }
+  """
 
   @send_money_doc """
     mutation SendMoney($amount: String!, $description: String, $recipient: ID!, $source: ID!) {

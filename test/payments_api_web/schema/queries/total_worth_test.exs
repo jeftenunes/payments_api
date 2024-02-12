@@ -1,5 +1,5 @@
 defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
-  use PaymentsApi.DataCase
+  use PaymentsApiWeb.DataCase
 
   alias PaymentsApi.{PaymentsFixtures, PaymentsHelpers}
 
