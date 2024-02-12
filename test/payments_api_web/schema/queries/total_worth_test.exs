@@ -108,7 +108,7 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
       |> stub(:fetch, fn %{
                            to_currency: to_currency,
                            from_currency: from_currency
-                         } = params ->
+                         } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",

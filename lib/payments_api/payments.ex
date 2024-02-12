@@ -40,13 +40,6 @@ defmodule PaymentsApi.Payments do
       {:valid, credit_transaction_amount} =
         MoneyParser.maybe_parse_amount_from_string(attrs.amount)
 
-      IO.inspect("credit_transaction_amount: #{credit_transaction_amount}")
-      IO.inspect("exchange_rate: #{exchange_rate}")
-
-      IO.inspect(
-        "MoneyParser.maybe_parse_amount_from_integer(credit_transaction_amount): #{MoneyParser.maybe_parse_amount_from_integer(credit_transaction_amount)}"
-      )
-
       {:valid, credit_transaction_amount} =
         (MoneyParser.maybe_parse_amount_from_integer(credit_transaction_amount) * exchange_rate)
         |> :erlang.float_to_binary(decimals: 2)

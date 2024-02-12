@@ -3,8 +3,6 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
   def maybe_parse_amount_from_string(amount) do
     cond do
       String.match?(amount, ~r/^0,\d{1,2}$/) ->
-        IO.inspect("2XXX")
-
         parsed =
           String.replace(amount, ",", "")
           |> String.slice(1..-1)
@@ -14,8 +12,6 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^\d+,\d{1,2}$/) ->
-        IO.inspect("3XXX")
-
         parsed =
           String.replace(amount, ",", "")
           |> String.pad_trailing(3, "0")
@@ -24,8 +20,6 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^0[^.]\d+$/) ->
-        IO.inspect("1XXX")
-
         prepared_str =
           String.replace_leading(amount, "0", "")
 
@@ -35,8 +29,6 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^0.\d{1,2}$/) ->
-        IO.inspect("4XXX")
-
         parsed =
           String.replace(amount, ".", "")
           |> String.slice(1..-1)
@@ -46,8 +38,6 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^0,\d{1,2}$/) ->
-        IO.inspect("5XXX")
-
         parsed =
           String.replace(amount, ",", "")
           |> String.slice(1..-1)
@@ -57,8 +47,6 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^\d+$/) ->
-        IO.inspect("7XXX")
-
         prepared_str =
           "#{String.replace(amount, ".", "")}00"
 
@@ -67,8 +55,6 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
         {:valid, parsed}
 
       String.match?(amount, ~r/^\d+.\d{1,2}$/) ->
-        IO.inspect("6XXX")
-
         parsed =
           String.replace(amount, ".", "")
           |> String.pad_trailing(3, "0")

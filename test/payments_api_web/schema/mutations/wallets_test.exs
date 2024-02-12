@@ -29,7 +29,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.WalletsTest do
 
       # assert
       id = to_string(usr.id)
-      assert %{"currency" => "USD", "id" => _, "userId" => id} = data["createWallet"]
+      assert %{"currency" => "USD", "id" => _, "userId" => ^id} = data["createWallet"]
     end
 
     # TODO test unsupported currencies case

@@ -27,7 +27,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       stub(MockAlphaVantageApiWrapper, :fetch, fn %{
                                                     to_currency: to_currency,
                                                     from_currency: from_currency
-                                                  } = params ->
+                                                  } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -76,7 +76,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       stub(MockAlphaVantageApiWrapper, :fetch, fn %{
                                                     to_currency: _to_currency,
                                                     from_currency: _from_currency
-                                                  } = params ->
+                                                  } = _params ->
         {:error,
          %{
            CAD: [
@@ -128,7 +128,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       stub(MockAlphaVantageApiWrapper, :fetch, fn %{
                                                     to_currency: _to_currency,
                                                     from_currency: _from_currency
-                                                  } = params ->
+                                                  } = _params ->
         {:error,
          %{
            CAD: [
