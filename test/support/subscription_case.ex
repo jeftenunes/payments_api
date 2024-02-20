@@ -1,10 +1,9 @@
 defmodule PaymentsApiWeb.SubscriptionCase do
-  require Phoenix.ChannelTest
   use ExUnit.CaseTemplate
 
   using do
     quote do
-      use PaymentsApiWeb.Schema
+      use PaymentsApiWeb.ChannelCase
 
       use Absinthe.Phoenix.SubscriptionTest,
         schema: PaymentsApiWeb.Schema

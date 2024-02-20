@@ -7,25 +7,6 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
 
   setup [:set_mox_global]
 
-  @create_user_doc """
-    mutation CreateUser($email: String!) {
-      createUser(email: $email) {
-        id
-        email
-      }
-    }
-  """
-
-  @create_wallet_doc """
-    mutation CreateWallet($userId: ID!, $currency: String!) {
-      createWallet(userId: $userId, currency: $currency) {
-        id,
-        userId,
-        currency
-      }
-    }
-  """
-
   @send_money_doc """
     mutation SendMoney($amount: String!, $description: String, $recipient: ID!, $source: ID!) {
       sendMoney(amount: $amount, description: $description, recipient: $recipient, source: $source) {

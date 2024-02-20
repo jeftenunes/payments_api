@@ -7,6 +7,12 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserWorth do
     field :user_total_worth_updated, list_of(:total_worth) do
       arg(:user_id, :id)
 
+      trigger(:create_user,
+        topic: fn args ->
+          "user_total_worth_updated:#{args.user_id}"
+        end
+      )
+
       config(fn args, _ ->
         UserTotalWorth.track_user_total_worth(args.user_id)
         {:ok, topic: "user_total_worth_updated:#{args.user_id}"}
