@@ -21,10 +21,10 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.ExchangeRateTest do
       socket: socket
     } do
       # arrange
-      stub_many(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                         to_currency: to_currency,
-                                                         from_currency: from_currency
-                                                       } = _params ->
+      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
+                                                    to_currency: to_currency,
+                                                    from_currency: from_currency
+                                                  } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -53,8 +53,6 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.ExchangeRateTest do
 
       # assert
       assert_push "subscription:data", data
-
-      IO.inspect(data)
     end
   end
 end
