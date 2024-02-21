@@ -62,41 +62,41 @@ defmodule PaymentsApi.Payments do
           parsed_exchange_rate
         )
 
-      with {:valid, transaction_amount} <-
-             MoneyParser.maybe_parse_amount_from_string(attrs.amount) do
-        initial_debit_transaction_state =
-          Map.put(
-            initial_debit_transaction_state,
-            :amount,
-            transaction_amount
-          )
+      case MoneyParser.maybe_parse_amount_from_string(attrs.amount) do
+        {:valid, transaction_amount} ->
+          initial_debit_transaction_state =
+            Map.put(
+              initial_debit_transaction_state,
+              :amount,
+              transaction_amount
+            )
 
-        initial_credit_transaction_state =
-          Map.put(
-            initial_credit_transaction_state,
-            :amount,
-            credit_transaction_amount
-          )
+          initial_credit_transaction_state =
+            Map.put(
+              initial_credit_transaction_state,
+              :amount,
+              credit_transaction_amount
+            )
 
-        {:ok, debit_op_result} =
-          %Transaction{}
-          |> Transaction.changeset(initial_debit_transaction_state)
-          |> Repo.insert()
+          {:ok, debit_op_result} =
+            %Transaction{}
+            |> Transaction.changeset(initial_debit_transaction_state)
+            |> Repo.insert()
 
-        initial_credit_transaction_state =
-          Map.put(
-            initial_credit_transaction_state,
-            :origin_transaction_id,
-            debit_op_result.id
-          )
+          initial_credit_transaction_state =
+            Map.put(
+              initial_credit_transaction_state,
+              :origin_transaction_id,
+              debit_op_result.id
+            )
 
-        credit_op_result =
-          %Transaction{}
-          |> Transaction.changeset(initial_credit_transaction_state)
-          |> Repo.insert()
+          credit_op_result =
+            %Transaction{}
+            |> Transaction.changeset(initial_credit_transaction_state)
+            |> Repo.insert()
 
-        map_response({credit_op_result, wallets})
-      else
+          map_response({credit_op_result, wallets})
+
         {:invalid, errors} ->
           errors
       end
@@ -158,12 +158,14 @@ defmodule PaymentsApi.Payments do
   end
 
   def retrieve_total_worth_for_user(%{id: id, currency: currency} = params) do
-    with true <- Currencies.is_supported?(currency) do
-      Transaction.build_find_transaction_history_for_user_qry(id)
-      |> Repo.all()
-      |> aggregate_user_transaction_summary(params)
-    else
-      _ -> ["Currencies not supported"]
+    case Currencies.supported?(currency) do
+      true ->
+        Transaction.build_find_transaction_history_for_user_qry(id)
+        |> Repo.all()
+        |> aggregate_user_transaction_summary(params)
+
+      _ ->
+        ["Currencies not supported"]
     end
   end
 
@@ -201,7 +203,7 @@ defmodule PaymentsApi.Payments do
   def get_wallet(id), do: Repo.get!(Wallet, id)
 
   def create_wallet(%{user_id: user_id, currency: currency} = attrs) do
-    case {user_exists(String.to_integer(user_id)), Currencies.is_supported?(currency)} do
+    case {user_exists(String.to_integer(user_id)), Currencies.supported?(currency)} do
       {true, true} ->
         {:ok, wallet} =
           build_wallet_initial_state(attrs)

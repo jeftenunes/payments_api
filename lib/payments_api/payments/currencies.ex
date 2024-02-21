@@ -233,13 +233,13 @@ defmodule PaymentsApi.Payments.Currencies do
     Map.filter(@currencies, fn {key, _value} -> key === currency end)
   end
 
-  @spec is_supported?(currency :: String.t()) :: boolean
-  def is_supported?(currency) when is_bitstring(currency) do
-    currency |> get_currency_atom() |> is_supported?()
+  @spec supported?(currency :: String.t()) :: boolean
+  def supported?(currency) when is_bitstring(currency) do
+    currency |> get_currency_atom() |> supported?()
   end
 
-  @spec is_supported?(currency_key :: atom) :: boolean
-  def is_supported?(currency_key) do
+  @spec supported?(currency_key :: atom) :: boolean
+  def supported?(currency_key) do
     Map.has_key?(get_supported_currencies(), currency_key)
   end
 

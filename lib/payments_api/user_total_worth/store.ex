@@ -1,4 +1,8 @@
 defmodule PaymentsApi.UserTotalWorth.Store do
+  @moduledoc """
+    Agent to hold user total worth
+  """
+
   use Agent
 
   @default_name UserTotalWorthStore

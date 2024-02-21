@@ -32,7 +32,6 @@ defmodule PaymentsApiWeb.Schema.Mutations.WalletsTest do
       assert %{"currency" => "USD", "id" => _, "userId" => ^id} = data["createWallet"]
     end
 
-    # TODO test unsupported currencies case
     test "should not create a wallet due to unsupported currencies" do
       # arrange
       usr = PaymentsFixtures.user_fixture(%{email: "wallets_test@test.com"})
