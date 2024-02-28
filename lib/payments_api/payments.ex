@@ -37,33 +37,31 @@ defmodule PaymentsApi.Payments do
       initial_credit_transaction_state =
         build_initial_transaction_state(attrs, recipient_id, "CREDIT")
 
-      {:valid, credit_transaction_amount} =
-        MoneyParser.maybe_parse_amount_from_string(attrs.amount)
-
-      {:valid, credit_transaction_amount} =
-        (MoneyParser.maybe_parse_amount_from_integer(credit_transaction_amount) * exchange_rate)
-        |> :erlang.float_to_binary(decimals: 2)
-        |> MoneyParser.maybe_parse_amount_from_string()
-
-      {:valid, parsed_exchange_rate} =
-        ExchangeRate.parse_exchange_rate_to_db(to_string(exchange_rate))
-
-      initial_debit_transaction_state =
-        Map.put(
-          initial_debit_transaction_state,
-          :exchange_rate,
-          100
-        )
-
-      initial_credit_transaction_state =
-        Map.put(
-          initial_credit_transaction_state,
-          :exchange_rate,
-          parsed_exchange_rate
-        )
-
       case MoneyParser.maybe_parse_amount_from_string(attrs.amount) do
         {:valid, transaction_amount} ->
+          {:valid, credit_transaction_amount} =
+            (MoneyParser.maybe_parse_amount_from_integer(transaction_amount) *
+               exchange_rate)
+            |> :erlang.float_to_binary(decimals: 2)
+            |> MoneyParser.maybe_parse_amount_from_string()
+
+          {:valid, parsed_exchange_rate} =
+            ExchangeRate.parse_exchange_rate_to_db(to_string(exchange_rate))
+
+          initial_debit_transaction_state =
+            Map.put(
+              initial_debit_transaction_state,
+              :exchange_rate,
+              100
+            )
+
+          initial_credit_transaction_state =
+            Map.put(
+              initial_credit_transaction_state,
+              :exchange_rate,
+              parsed_exchange_rate
+            )
+
           initial_debit_transaction_state =
             Map.put(
               initial_debit_transaction_state,
