@@ -33,11 +33,11 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
   describe "totalWorth" do
     test "should retrieve user correct total worth after creating a wallet - no exchange rate applied" do
       # arrange
-      MockAlphaVantageApiWrapper
-      |> stub(:fetch, fn %{
-                           to_currency: to_currency,
-                           from_currency: from_currency
-                         } = _params ->
+
+      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
+                                                    to_currency: to_currency,
+                                                    from_currency: from_currency
+                                                  } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -63,16 +63,15 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  variables: %{"userId" => usr.id, "currency" => "CAD"}
                )
 
-      assert data["totalWorth"]["totalWorth"] == "100.00"
+      assert data["totalWorth"]["totalWorth"] === "100.00"
     end
 
     test "should retrieve user correct total worth after creating a wallet - exchange rate applied" do
       # arrange
-      MockAlphaVantageApiWrapper
-      |> stub(:fetch, fn %{
-                           to_currency: to_currency,
-                           from_currency: from_currency
-                         } = _params ->
+      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
+                                                    to_currency: to_currency,
+                                                    from_currency: from_currency
+                                                  } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -98,17 +97,16 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  variables: %{"userId" => usr.id, "currency" => "USD"}
                )
 
-      assert data["totalWorth"]["currency"] == "USD"
-      assert data["totalWorth"]["totalWorth"] == "102.00"
+      assert data["totalWorth"]["currency"] === "USD"
+      assert data["totalWorth"]["totalWorth"] === "102.00"
     end
 
     test "should retrieve user correct total worth after processing a transaction - exchange rate applied" do
       # arrange
-      MockAlphaVantageApiWrapper
-      |> stub(:fetch, fn %{
-                           to_currency: to_currency,
-                           from_currency: from_currency
-                         } = _params ->
+      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
+                                                    to_currency: to_currency,
+                                                    from_currency: from_currency
+                                                  } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -151,8 +149,8 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  variables: %{"userId" => usr1.id, "currency" => "CAD"}
                )
 
-      assert data["totalWorth"]["currency"] == "CAD"
-      assert data["totalWorth"]["totalWorth"] == "106.25"
+      assert data["totalWorth"]["currency"] === "CAD"
+      assert data["totalWorth"]["totalWorth"] === "106.25"
 
       assert {:ok, %{data: data}} =
                Absinthe.run(
@@ -161,8 +159,8 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  variables: %{"userId" => usr2.id, "currency" => "BRL"}
                )
 
-      assert data["totalWorth"]["currency"] == "BRL"
-      assert data["totalWorth"]["totalWorth"] == "75.00"
+      assert data["totalWorth"]["currency"] === "BRL"
+      assert data["totalWorth"]["totalWorth"] === "75.00"
     end
   end
 end

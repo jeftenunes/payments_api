@@ -49,8 +49,7 @@ defmodule PaymentsApi.Payments.PaymentProcessingServer do
 
   defp publish_user_total_worth_updates(supervisor, user_id) do
     user_total_worth =
-      Currencies.get_supported_currencies()
-      |> Enum.map(fn {currency_key, _currency_infos} ->
+      Enum.map(Currencies.get_supported_currencies(), fn {currency_key, _currency_infos} ->
         Payments.retrieve_total_worth_for_user(%{id: user_id, currency: to_string(currency_key)})
       end)
 

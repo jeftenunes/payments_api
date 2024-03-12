@@ -3,7 +3,7 @@ defmodule PaymentsApi.Payments.ExchangeRate do
   alias PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
 
   def parse_exchange_rate(exchange_rate) do
-    exchange_rate |> String.to_float()
+    String.to_float(exchange_rate)
   end
 
   def parse_exchange_rate_to_db(exchange_rate) do

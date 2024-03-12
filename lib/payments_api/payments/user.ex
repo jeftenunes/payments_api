@@ -9,7 +9,7 @@ defmodule PaymentsApi.Payments.User do
   schema "users" do
     field :email, :string
 
-    has_many(:wallets, PaymentsApi.Payments.Wallet)
+    has_many :wallets, PaymentsApi.Payments.Wallet
 
     timestamps()
   end
@@ -56,7 +56,7 @@ defmodule PaymentsApi.Payments.User do
     end)
   end
 
-  defp join_users_wallets() do
+  defp join_users_wallets do
     from(u in User,
       left_join: w in Wallet,
       on: u.id == w.user_id,

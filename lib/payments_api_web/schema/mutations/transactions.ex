@@ -5,13 +5,13 @@ defmodule PaymentsApiWeb.Schema.Mutations.Transactions do
 
   object :transactions_mutations do
     field :send_money, :transaction do
-      arg(:source, non_null(:id))
-      arg(:recipient, non_null(:id))
+      arg :source, non_null(:id)
+      arg :recipient, non_null(:id)
 
-      arg(:description, :string)
-      arg(:amount, non_null(:string))
+      arg :description, :string
+      arg :amount, non_null(:string)
 
-      resolve(&PaymentsResolver.send_money/2)
+      resolve &PaymentsResolver.send_money/2
     end
   end
 end

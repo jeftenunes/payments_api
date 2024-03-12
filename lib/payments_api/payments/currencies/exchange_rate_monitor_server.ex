@@ -59,12 +59,13 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
       ) do
     exchange_rates =
       Enum.map(@supported_currencies, fn currency ->
-        currencies_to_compare = Enum.filter(@supported_currencies, &(&1 != currency))
+        currencies_to_compare = Enum.filter(@supported_currencies, &(&1 !== currency))
         fetch_rate_for_currency(currency, currencies_to_compare)
       end)
-      |> Enum.into(%{})
 
-    Map.get(state, :exchange_rates)
+    exchange_rates = Enum.into(exchange_rates, %{})
+
+    state[:exchange_rates]
     |> retrieve_updated_exchange_rates(exchange_rates)
     |> publish_exchange_rates_updates(state)
 
@@ -96,7 +97,7 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   defp filter_exchange_rates({:error, message}, _to_currency), do: {:error, message}
 
   defp filter_exchange_rates(currency_rate, to_currency),
-    do: currency_rate.to_currency == to_currency
+    do: currency_rate.to_currency === to_currency
 
   defp publish_exchange_rates_updates(updated_exchange_rates, %{supervisor: supervisor} = _state) do
     Enum.each(updated_exchange_rates, fn {currency, updated_exchange_rate} ->
@@ -122,8 +123,7 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
 
   defp fetch_rate_for_currency(from_currency, to_currencies) do
     ratings_for_currency =
-      to_currencies
-      |> Enum.map(&Currencies.fetch_exchange_rate_from_api(from_currency, &1))
+      Enum.map(to_currencies, &Currencies.fetch_exchange_rate_from_api(from_currency, &1))
 
     {from_currency, ratings_for_currency}
   end
@@ -133,11 +133,10 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer do
   end
 
   defp retrieve_updated_exchange_rates(actual_rates, new_rates) do
-    new_rates
-    |> Enum.filter(fn {k, v} ->
+    Enum.filter(new_rates, fn {k, v} ->
       actual_rate = Map.get(actual_rates, k)
 
-      actual_rate != v
+      actual_rate !== v
     end)
   end
 end

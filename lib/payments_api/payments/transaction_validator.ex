@@ -12,10 +12,16 @@ defmodule PaymentsApi.Payments.TransactionValidator do
   defp do_validate_transaction(transaction) do
     parsed_amount = BalanceHelper.parse_amount(transaction.amount)
 
-    Transaction.build_find_transaction_history_for_wallet_qry(transaction.wallet_id)
-    |> Repo.all()
-    |> calculate_balance_for_wallet()
-    |> validate_source_wallet_balance(transaction, parsed_amount)
+    history =
+      transaction.wallet_id
+      |> Transaction.build_find_transaction_history_for_wallet_qry()
+      |> Repo.all()
+
+    validate_source_wallet_balance(
+      calculate_balance_for_wallet(history),
+      transaction,
+      parsed_amount
+    )
   end
 
   defp calculate_balance_for_wallet(transactions) when is_list(transactions) do

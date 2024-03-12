@@ -3,8 +3,6 @@ defmodule PaymentsApi.Payments do
   The Payments context.
   """
 
-  import Ecto.Query, warn: false
-
   alias PaymentsApi.Payments.TransactionValidator
   alias PaymentsApi.Repo
 
@@ -40,10 +38,7 @@ defmodule PaymentsApi.Payments do
       case MoneyParser.maybe_parse_amount_from_string(attrs.amount) do
         {:valid, transaction_amount} ->
           {:valid, credit_transaction_amount} =
-            (MoneyParser.maybe_parse_amount_from_integer(transaction_amount) *
-               exchange_rate)
-            |> :erlang.float_to_binary(decimals: 2)
-            |> MoneyParser.maybe_parse_amount_from_string()
+            apply_exchange_rate_to_amount(transaction_amount, exchange_rate)
 
           {:valid, parsed_exchange_rate} =
             ExchangeRate.parse_exchange_rate_to_db(to_string(exchange_rate))
@@ -115,12 +110,11 @@ defmodule PaymentsApi.Payments do
     |> Repo.update()
   end
 
-  def retrieve_transactions_to_process() do
-    Transaction.build_retrieve_transactions_to_process_query()
-    |> Repo.all()
+  def retrieve_transactions_to_process do
+    Repo.all(Transaction.build_retrieve_transactions_to_process_query())
   end
 
-  def process_transaction() do
+  def process_transaction do
     retrieve_transactions_to_process()
     |> Enum.map(&TransactionValidator.maybe_validate_transaction(&1))
     |> Enum.reduce(%{}, fn validation_result, acc ->
@@ -158,7 +152,8 @@ defmodule PaymentsApi.Payments do
   def retrieve_total_worth_for_user(%{id: id, currency: currency} = params) do
     case Currencies.supported?(currency) do
       true ->
-        Transaction.build_find_transaction_history_for_user_qry(id)
+        id
+        |> Transaction.build_find_transaction_history_for_user_qry()
         |> Repo.all()
         |> aggregate_user_transaction_summary(params)
 
@@ -168,24 +163,26 @@ defmodule PaymentsApi.Payments do
   end
 
   def get_user_by(%{id: id}) do
-    User.find_users(id)
+    id
+    |> User.find_users()
     |> Repo.all()
     |> build_users_list()
     |> List.first()
   end
 
   def get_user_by(%{email: email}) do
-    User.find_user_by_email(email)
+    email
+    |> User.find_user_by_email()
     |> Repo.all()
     |> build_users_list()
     |> List.first()
   end
 
   def user_exists(id),
-    do: User.build_exists_qry(id) |> Repo.exists?()
+    do: id |> User.build_exists_qry() |> Repo.exists?()
 
   def list_users(params) do
-    User.find_users(params) |> Repo.all() |> build_users_list()
+    params |> User.find_users() |> Repo.all() |> build_users_list()
   end
 
   def create_user(attrs \\ %{}) do
@@ -195,7 +192,9 @@ defmodule PaymentsApi.Payments do
   end
 
   def list_wallets(params) do
-    Wallet.build_find_wallets_by_qry(params) |> Repo.all()
+    params
+    |> Wallet.build_find_wallets_by_qry()
+    |> Repo.all()
   end
 
   def get_wallet(id), do: Repo.get!(Wallet, id)
@@ -204,7 +203,8 @@ defmodule PaymentsApi.Payments do
     case {user_exists(String.to_integer(user_id)), Currencies.supported?(currency)} do
       {true, true} ->
         {:ok, wallet} =
-          build_wallet_initial_state(attrs)
+          attrs
+          |> build_wallet_initial_state()
           |> Wallet.changeset(attrs)
           |> Repo.insert()
 
@@ -222,13 +222,15 @@ defmodule PaymentsApi.Payments do
   end
 
   def find_user_by_wallet_id_qry(wallet_id) do
-    Wallet.build_find_user_by_wallet_id_qry(wallet_id)
+    wallet_id
+    |> Wallet.build_find_user_by_wallet_id_qry()
     |> Repo.one!()
   end
 
   ## helpers
   defp process_credit_transaction(origin_transaction_id) do
-    Transaction.build_find_transaction_history_by_origin_qry(origin_transaction_id)
+    origin_transaction_id
+    |> Transaction.build_find_transaction_history_by_origin_qry()
     |> Repo.one!()
     |> Transaction.changeset(%{status: "PROCESSED"})
     |> Repo.update()
@@ -329,7 +331,7 @@ defmodule PaymentsApi.Payments do
     }
   end
 
-  defp retrieve_exchange_rate(from_currency, to_currency) when from_currency == to_currency,
+  defp retrieve_exchange_rate(from_currency, to_currency) when from_currency === to_currency,
     do: 1.0
 
   defp retrieve_exchange_rate(from_currency, to_currency) do
@@ -350,7 +352,7 @@ defmodule PaymentsApi.Payments do
     wallets =
       data
       |> Enum.map(fn item -> item.wallet end)
-      |> Enum.filter(fn w -> w != nil end)
+      |> Enum.filter(fn w -> w !== nil end)
 
     users =
       data
@@ -361,7 +363,7 @@ defmodule PaymentsApi.Payments do
       Map.put(
         user,
         :wallets,
-        Enum.filter(wallets, fn wallet -> wallet.user_id == user.id end)
+        Enum.filter(wallets, fn wallet -> wallet.user_id === user.id end)
       )
     end)
   end
@@ -383,8 +385,7 @@ defmodule PaymentsApi.Payments do
   end
 
   defp retrieve_transaction_wallets(source_id, recipient_id) do
-    Wallet.build_fetch_wallets_qry(source_id, recipient_id)
-    |> Repo.one()
+    Repo.one(Wallet.build_fetch_wallets_qry(source_id, recipient_id))
   end
 
   defp map_response({
@@ -403,5 +404,15 @@ defmodule PaymentsApi.Payments do
        description: transaction.description,
        exchange_rate: transaction.exchange_rate
      }}
+  end
+
+  defp apply_exchange_rate_to_amount(transaction_amount, exchange_rate) do
+    rate_applied_amount =
+      MoneyParser.maybe_parse_amount_from_integer(transaction_amount) *
+        exchange_rate
+
+    rate_applied_amount
+    |> :erlang.float_to_binary(decimals: 2)
+    |> MoneyParser.maybe_parse_amount_from_string()
   end
 end

@@ -36,28 +36,24 @@ defmodule PaymentsApi.Payments.Transaction do
     |> validate_required(@required_fields)
   end
 
-  def build_retrieve_transactions_to_process_query() do
-    from(
-      t in Transaction,
+  def build_retrieve_transactions_to_process_query do
+    from t in Transaction,
       where: t.status == "PENDING" and t.type == "DEBIT",
       limit: 100
-    )
   end
 
   def build_find_transaction_history_for_wallet_qry(wallet_id) do
-    from(t in Transaction,
+    from t in Transaction,
       where: t.wallet_id == ^wallet_id and t.status == "PROCESSED"
-    )
   end
 
   def build_find_transaction_history_by_origin_qry(origin_transaction_id) do
-    from(t in Transaction,
+    from t in Transaction,
       where: t.origin_transaction_id == ^origin_transaction_id and t.status == "PENDING"
-    )
   end
 
   def build_find_transaction_history_for_user_qry(user_id) do
-    from(w in Wallet,
+    from w in Wallet,
       join: t in Transaction,
       on: w.id == t.wallet_id,
       where: w.user_id == ^user_id and t.status == "PROCESSED",
@@ -69,6 +65,5 @@ defmodule PaymentsApi.Payments.Transaction do
         currency: w.currency,
         transaction_id: t.id
       }
-    )
   end
 end

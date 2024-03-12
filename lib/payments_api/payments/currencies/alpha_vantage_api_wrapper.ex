@@ -22,7 +22,8 @@ defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper do
          headers: _headers
        }) do
     raw_response =
-      Jason.decode!(body)
+      body
+      |> Jason.decode!()
       |> Map.get(@api_response_root_node)
 
     %{
@@ -36,8 +37,8 @@ defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper do
   end
 
   defp send_request(query_params) do
-    Finch.build(:get, build_encoded_url(query_params))
-    |> Finch.request(PaymentsApi.Finch)
+    request = Finch.build(:get, build_encoded_url(query_params))
+    Finch.request(request, PaymentsApi.Finch)
   end
 
   defp build_encoded_url(query) do

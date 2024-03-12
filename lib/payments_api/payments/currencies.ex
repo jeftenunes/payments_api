@@ -224,7 +224,7 @@ defmodule PaymentsApi.Payments.Currencies do
   def all, do: @currencies
 
   @spec find_by(currency :: String.t()) :: map
-  def find_by(currency) when is_bitstring(currency) do
+  def find_by(currency) when is_binary(currency) do
     currency |> get_currency_atom() |> find_by()
   end
 
@@ -234,7 +234,7 @@ defmodule PaymentsApi.Payments.Currencies do
   end
 
   @spec supported?(currency :: String.t()) :: boolean
-  def supported?(currency) when is_bitstring(currency) do
+  def supported?(currency) when is_binary(currency) do
     currency |> get_currency_atom() |> supported?()
   end
 
@@ -245,20 +245,14 @@ defmodule PaymentsApi.Payments.Currencies do
 
   @spec fetch_exchange_rate_from_api(from_currency :: String.t(), to_currency :: String.t()) ::
           map()
-  def fetch_exchange_rate_from_api(from_currency, to_currency) do
-    with response <-
-           api_wrapper().fetch(%{from_currency: from_currency, to_currency: to_currency}) do
-      response
-    end
-  end
+  def fetch_exchange_rate_from_api(from_currency, to_currency),
+    do: api_wrapper().fetch(%{from_currency: from_currency, to_currency: to_currency})
 
   @spec get_currency_atom(currency_str :: String.t()) :: atom()
   def get_currency_atom(currency_str) do
-    try do
-      String.to_existing_atom(currency_str)
-    rescue
-      _e in ArgumentError -> nil
-    end
+    String.to_existing_atom(currency_str)
+  rescue
+    _e in ArgumentError -> nil
   end
 
   @spec get_supported_currencies() :: map()
@@ -271,10 +265,11 @@ defmodule PaymentsApi.Payments.Currencies do
     if not are_supported_currencies_values,
       do: raise("Invalid currency configuration")
 
-    @supported_currencies
-    |> Enum.reduce(%{}, fn curr, acc -> Map.put(acc, curr, @currencies[curr]) end)
+    Enum.reduce(@supported_currencies, %{}, fn curr, acc ->
+      Map.put(acc, curr, @currencies[curr])
+    end)
   end
 
-  defp api_wrapper(),
+  defp api_wrapper,
     do: Application.get_env(:payments_api, :alpha_vantage_api_wrapper, AlphaVantageApiWrapper)
 end

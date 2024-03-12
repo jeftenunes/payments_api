@@ -64,11 +64,11 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
                  }
                )
 
-      assert data["sendMoney"]["amount"] == "24000"
-      assert data["sendMoney"]["status"] == "PENDING"
-      assert data["sendMoney"]["toCurrency"] == "USD"
-      assert data["sendMoney"]["fromCurrency"] == "CAD"
-      assert data["sendMoney"]["description"] == "test transaction"
+      assert data["sendMoney"]["amount"] === "24000"
+      assert data["sendMoney"]["status"] === "PENDING"
+      assert data["sendMoney"]["toCurrency"] === "USD"
+      assert data["sendMoney"]["fromCurrency"] === "CAD"
+      assert data["sendMoney"]["description"] === "test transaction"
     end
 
     test "should send money from one wallet to another - same currencies" do
@@ -120,11 +120,11 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
                  }
                )
 
-      assert data["sendMoney"]["amount"] == "20000"
-      assert data["sendMoney"]["status"] == "PENDING"
-      assert data["sendMoney"]["toCurrency"] == "BRL"
-      assert data["sendMoney"]["fromCurrency"] == "BRL"
-      assert data["sendMoney"]["description"] == "test transaction"
+      assert data["sendMoney"]["amount"] === "20000"
+      assert data["sendMoney"]["status"] === "PENDING"
+      assert data["sendMoney"]["toCurrency"] === "BRL"
+      assert data["sendMoney"]["fromCurrency"] === "BRL"
+      assert data["sendMoney"]["description"] === "test transaction"
     end
 
     test "should not send money from one wallet to another - different currencies and alpha vantage api in error" do
@@ -175,7 +175,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
                  }
                )
 
-      assert List.first(errors)[:message] ==
+      assert List.first(errors)[:message] ===
                "Error retrieving exchange rates. You still can transfer money between same currency wallets."
     end
 
@@ -221,7 +221,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
                  }
                )
 
-      assert List.first(errors)[:message] ==
+      assert List.first(errors)[:message] ===
                "cannot parse amount | abc"
     end
   end

@@ -4,7 +4,8 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
     cond do
       String.match?(amount, ~r/^\d+,\d{1,2}$/) ->
         parsed =
-          String.replace(amount, ",", "")
+          amount
+          |> String.replace(",", "")
           |> String.pad_trailing(3, "0")
           |> String.to_integer()
 
@@ -20,7 +21,8 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
 
       String.match?(amount, ~r/^\d+\.\d{1,2}$/) ->
         parsed =
-          String.replace(amount, ".", "")
+          amount
+          |> String.replace(".", "")
           |> String.pad_trailing(3, "0")
           |> String.to_integer()
 
@@ -43,14 +45,14 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
       |> String.pad_leading(3, "0")
       |> String.split_at(1)
 
-    "#{whole_part}.#{decimal}"
-    |> String.to_float()
+    String.to_float("#{whole_part}.#{decimal}")
   end
 
   defp do_maybe_parse_amount_from_integer(str_amount) do
     val =
-      "#{String.slice(str_amount, 0, String.length(str_amount) - 2)}.#{String.slice(str_amount, -2, 2)}"
-      |> String.to_float()
+      String.to_float(
+        "#{String.slice(str_amount, 0, String.length(str_amount) - 2)}.#{String.slice(str_amount, -2, 2)}"
+      )
 
     val
   end

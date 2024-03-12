@@ -66,7 +66,7 @@ defmodule PaymentsApiWeb.Schema.Queries.UsersTest do
 
       user_id = data["user"]["id"]
 
-      assert data["user"]["email"] == "test@email.com"
+      assert data["user"]["email"] === "test@email.com"
 
       assert [
                %{"id" => _, "userId" => user_id, "currency" => "BRL"},
