@@ -24,10 +24,10 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
   describe "@sendMoney" do
     test "should send money from one wallet to another - different currencies" do
       # arrange
-      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                    to_currency: to_currency,
-                                                    from_currency: from_currency
-                                                  } = _params ->
+      stub(MockAlphaVantageApiClient, :fetch, fn %{
+                                                   to_currency: to_currency,
+                                                   from_currency: from_currency
+                                                 } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -73,10 +73,10 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
 
     test "should send money from one wallet to another - same currencies" do
       # arrange
-      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                    to_currency: _to_currency,
-                                                    from_currency: _from_currency
-                                                  } = _params ->
+      stub(MockAlphaVantageApiClient, :fetch, fn %{
+                                                   to_currency: _to_currency,
+                                                   from_currency: _from_currency
+                                                 } = _params ->
         {:error,
          %{
            CAD: [
@@ -129,10 +129,10 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
 
     test "should not send money from one wallet to another - different currencies and alpha vantage api in error" do
       # arrange
-      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                    to_currency: _to_currency,
-                                                    from_currency: _from_currency
-                                                  } = _params ->
+      stub(MockAlphaVantageApiClient, :fetch, fn %{
+                                                   to_currency: _to_currency,
+                                                   from_currency: _from_currency
+                                                 } = _params ->
         {:error,
          %{
            CAD: [
@@ -181,10 +181,10 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
 
     test "should not send money from one wallet to another - invalid amount" do
       # arrange
-      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                    to_currency: to_currency,
-                                                    from_currency: from_currency
-                                                  } = _params ->
+      stub(MockAlphaVantageApiClient, :fetch, fn %{
+                                                   to_currency: to_currency,
+                                                   from_currency: from_currency
+                                                 } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",

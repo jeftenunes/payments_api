@@ -1,5 +1,6 @@
-defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper do
+defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiClient do
   @moduledoc false
+  alias PaymentsApi.Payments
 
   @callback fetch(map :: map()) :: list()
   @callback fetch(map :: map()) :: tuple()
@@ -37,8 +38,9 @@ defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper do
   end
 
   defp send_request(query_params) do
-    request = Finch.build(:get, build_encoded_url(query_params))
-    Finch.request(request, PaymentsApi.Finch)
+    :get
+    |> Finch.build(build_encoded_url(query_params))
+    |> Finch.request(PaymentsApi.Finch)
   end
 
   defp build_encoded_url(query) do

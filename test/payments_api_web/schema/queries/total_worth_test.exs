@@ -34,10 +34,10 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
     test "should retrieve user correct total worth after creating a wallet - no exchange rate applied" do
       # arrange
 
-      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                    to_currency: to_currency,
-                                                    from_currency: from_currency
-                                                  } = _params ->
+      stub(MockAlphaVantageApiClient, :fetch, fn %{
+                                                   to_currency: to_currency,
+                                                   from_currency: from_currency
+                                                 } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -68,10 +68,10 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
 
     test "should retrieve user correct total worth after creating a wallet - exchange rate applied" do
       # arrange
-      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                    to_currency: to_currency,
-                                                    from_currency: from_currency
-                                                  } = _params ->
+      stub(MockAlphaVantageApiClient, :fetch, fn %{
+                                                   to_currency: to_currency,
+                                                   from_currency: from_currency
+                                                 } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",
@@ -103,10 +103,10 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
 
     test "should retrieve user correct total worth after processing a transaction - exchange rate applied" do
       # arrange
-      stub(MockAlphaVantageApiWrapper, :fetch, fn %{
-                                                    to_currency: to_currency,
-                                                    from_currency: from_currency
-                                                  } = _params ->
+      stub(MockAlphaVantageApiClient, :fetch, fn %{
+                                                   to_currency: to_currency,
+                                                   from_currency: from_currency
+                                                 } = _params ->
         %{
           bid_price: "1.50",
           ask_price: "2.10",

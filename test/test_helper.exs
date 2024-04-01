@@ -1,11 +1,11 @@
 ExUnit.start()
 
-Mox.defmock(MockAlphaVantageApiWrapper,
-  for: PaymentsApi.Payments.Currencies.AlphaVantageApiWrapper
+Mox.defmock(MockAlphaVantageApiClient,
+  for: PaymentsApi.Payments.Currencies.AlphaVantageApiClient
 )
 
 Application.put_env(
   :payments_api,
-  :alpha_vantage_api_wrapper,
-  MockAlphaVantageApiWrapper
+  :alpha_vantage_api_client,
+  MockAlphaVantageApiClient
 )
