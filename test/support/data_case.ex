@@ -16,7 +16,7 @@ defmodule PaymentsApiWeb.DataCase do
 
   use ExUnit.CaseTemplate
 
-  alias PaymentsApi.PaymentsFixtures
+  alias PaymentsApi.{PaymentsFixtures, PaymentsHelpers}
 
   using do
     quote do
@@ -36,6 +36,21 @@ defmodule PaymentsApiWeb.DataCase do
   end
 
   setup _context do
+    Mox.stub(MockAlphaVantageApiClient, :fetch, fn %{
+                                                     to_currency: to_currency,
+                                                     from_currency: from_currency
+                                                   } = _params ->
+      %{
+        bid_price: "1.50",
+        ask_price: "2.10",
+        to_currency: to_string(to_currency),
+        exchange_rate:
+          PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
+        from_currency: to_string(from_currency),
+        last_refreshed: DateTime.now!("Etc/UTC")
+      }
+    end)
+
     user1 = PaymentsFixtures.user_fixture(%{email: "test@email.com"})
 
     PaymentsFixtures.wallet_fixture(%{user_id: to_string(user1.id), currency: "BRL"})

@@ -12,6 +12,8 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRatePollingTask do
   @supported_currencies Application.compile_env(:payments_api, :supported_currencies)
 
   def start_link() do
+    Process.sleep(@exchange_rate_cache_expiration_in_ms)
+
     Task.start_link(fn ->
       retrieve_exchange_rates()
     end)

@@ -73,6 +73,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
 
     test "should send money from one wallet to another - same currencies" do
       # arrange
+
       stub(MockAlphaVantageApiClient, :fetch, fn %{
                                                    to_currency: _to_currency,
                                                    from_currency: _from_currency

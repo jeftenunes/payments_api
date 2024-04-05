@@ -116,7 +116,7 @@ defmodule PaymentsApi.Payments do
 
   def process_transaction do
     retrieve_transactions_to_process()
-    |> Enum.map(&TransactionValidator.maybe_validate_transaction(&1))
+    |> Enum.map(&TransactionValidator.validate_transaction(&1))
     |> Enum.reduce(%{}, fn validation_result, acc ->
       processing_results =
         case validation_result do
@@ -408,7 +408,7 @@ defmodule PaymentsApi.Payments do
 
   defp apply_exchange_rate_to_amount(transaction_amount, exchange_rate) do
     rate_applied_amount =
-      MoneyParser.maybe_parse_amount_from_integer(transaction_amount) *
+      MoneyParser.parse_amount_from_integer(transaction_amount) *
         exchange_rate
 
     rate_applied_amount

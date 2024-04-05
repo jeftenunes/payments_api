@@ -1,6 +1,5 @@
 defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiClient do
   @moduledoc false
-  alias PaymentsApi.Payments
 
   @callback fetch(map :: map()) :: list()
   @callback fetch(map :: map()) :: tuple()

@@ -1,5 +1,5 @@
 defmodule PaymentsApi.Payments.Parsers.MoneyParser do
-  @spec maybe_parse_amount_from_string(String.t()) :: {:valid, integer()} | {:invalid, nil}
+  @spec maybe_parse_amount_from_string(String.t()) :: {:valid, integer()} | {:invalid, list()}
   def maybe_parse_amount_from_string(amount) do
     cond do
       String.match?(amount, ~r/^\d+,\d{1,2}$/) ->
@@ -33,13 +33,13 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
     end
   end
 
-  def maybe_parse_amount_from_integer(amount) do
+  def parse_amount_from_integer(amount) do
     amount
     |> Integer.to_string()
-    |> do_maybe_parse_amount_from_integer()
+    |> extract_amount_from_integer()
   end
 
-  defp do_maybe_parse_amount_from_integer(str_amount) when byte_size(str_amount) < 3 do
+  defp extract_amount_from_integer(str_amount) when byte_size(str_amount) < 3 do
     {whole_part, decimal} =
       str_amount
       |> String.pad_leading(3, "0")
@@ -48,7 +48,7 @@ defmodule PaymentsApi.Payments.Parsers.MoneyParser do
     String.to_float("#{whole_part}.#{decimal}")
   end
 
-  defp do_maybe_parse_amount_from_integer(str_amount) do
+  defp extract_amount_from_integer(str_amount) do
     val =
       String.to_float(
         "#{String.slice(str_amount, 0, String.length(str_amount) - 2)}.#{String.slice(str_amount, -2, 2)}"

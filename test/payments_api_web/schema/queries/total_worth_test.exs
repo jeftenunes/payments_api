@@ -32,25 +32,6 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
 
   describe "totalWorth" do
     test "should retrieve user correct total worth after creating a wallet - no exchange rate applied" do
-      # arrange
-
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: to_currency,
-                                                   from_currency: from_currency
-                                                 } = _params ->
-        %{
-          bid_price: "1.50",
-          ask_price: "2.10",
-          to_currency: to_string(to_currency),
-          exchange_rate:
-            PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
-          from_currency: to_string(from_currency),
-          last_refreshed: DateTime.now!("Etc/UTC")
-        }
-      end)
-
-      Process.sleep(5000)
-
       usr = PaymentsFixtures.user_fixture(%{email: "total_worth_test@test.com"})
 
       PaymentsFixtures.wallet_fixture(%{user_id: to_string(usr.id), currency: "CAD"})

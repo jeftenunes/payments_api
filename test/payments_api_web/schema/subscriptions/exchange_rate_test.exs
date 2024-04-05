@@ -33,26 +33,6 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.ExchangeRateTest do
     test "exchange rate updated for specific currency - USD", %{
       socket: socket
     } do
-      # arrange
-
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: to_currency,
-                                                   from_currency: from_currency
-                                                 } = _params ->
-        %{
-          bid_price: "1.50",
-          ask_price: "2.10",
-          to_currency: to_string(to_currency),
-          exchange_rate:
-            PaymentsHelpers.mock_exchange_rate_by_currency_with_variation(
-              {to_currency, from_currency},
-              3
-            ),
-          from_currency: to_string(from_currency),
-          last_refreshed: DateTime.now!("Etc/UTC")
-        }
-      end)
-
       # act
       ref =
         push_doc(socket, @exchange_rate_updated_for_currency_doc,

@@ -23,8 +23,8 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
   """
 
   @user_total_worth_updated """
-    subscription UserTotalWorthUpdated($userId: ID!){
-      userTotalWorthUpdated(userId: $userId) {
+    subscription UserTotalWorthUpdated($id: ID!){
+      userTotalWorthUpdated(id: $id) {
         userId,
         currency,
         totalWorth
@@ -68,7 +68,7 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       ref =
         push_doc(socket, @user_total_worth_updated,
           variables: %{
-            "userId" => user2.id
+            "id" => user2.id
           }
         )
 
@@ -153,7 +153,7 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       ref =
         push_doc(socket, @user_total_worth_updated,
           variables: %{
-            "userId" => user2.id
+            "id" => user2.id
           }
         )
 

@@ -7,8 +7,6 @@ defmodule PaymentsApi.UserTotalWorth.Store do
 
   @default_name UserTotalWorthStore
 
-  defstruct supervisor: nil
-
   def start_link(opts \\ []) do
     opts = Keyword.put_new(opts, :name, @default_name)
 
@@ -33,22 +31,17 @@ defmodule PaymentsApi.UserTotalWorth.Store do
           Map.put(state, user_worth_summary.user_id, user_worth_summary)
 
         user_worth_summary ->
-          publish_user_total_worth_update(state.supervisor, user_worth_summary)
+          publish_user_total_worth_update(user_worth_summary)
           Map.put(state, user_worth_summary.user_id, user_worth_summary)
       end
     end)
   end
 
-  def publish_user_total_worth_update(
-        supervisor,
-        user_worth_summary
-      ) do
-    Task.Supervisor.start_child(supervisor, fn ->
-      Absinthe.Subscription.publish(
-        PaymentsApiWeb.Endpoint,
-        user_worth_summary,
-        user_total_worth_updated: "user_total_worth_updated:#{user_worth_summary.user_id}"
-      )
-    end)
+  def publish_user_total_worth_update(user_worth_summary) do
+    Absinthe.Subscription.publish(
+      PaymentsApiWeb.Endpoint,
+      user_worth_summary,
+      user_total_worth_updated: "user_total_worth_updated:#{user_worth_summary.user_id}"
+    )
   end
 end

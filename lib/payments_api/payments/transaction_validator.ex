@@ -2,14 +2,9 @@ defmodule PaymentsApi.Payments.TransactionValidator do
   alias PaymentsApi.Payments.{Transaction, Helpers.BalanceHelper}
   alias PaymentsApi.Repo
 
-  def maybe_validate_transaction(transaction) do
-    do_validate_transaction(transaction)
-  end
+  def validate_transaction(nil), do: []
 
-  ## helpers
-  defp do_validate_transaction(nil), do: []
-
-  defp do_validate_transaction(transaction) do
+  def validate_transaction(transaction) do
     parsed_amount = BalanceHelper.parse_amount(transaction.amount)
 
     history =
@@ -23,6 +18,8 @@ defmodule PaymentsApi.Payments.TransactionValidator do
       parsed_amount
     )
   end
+
+  ## helpers
 
   defp calculate_balance_for_wallet(transactions) when is_list(transactions) do
     Enum.reduce(transactions, 0, fn val, acc ->
