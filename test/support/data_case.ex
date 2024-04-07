@@ -30,12 +30,6 @@ defmodule PaymentsApiWeb.DataCase do
   end
 
   setup tags do
-    PaymentsApiWeb.DataCase.setup_sandbox(tags)
-
-    :ok
-  end
-
-  setup _context do
     Mox.stub(MockAlphaVantageApiClient, :fetch, fn %{
                                                      to_currency: to_currency,
                                                      from_currency: from_currency
@@ -51,6 +45,12 @@ defmodule PaymentsApiWeb.DataCase do
       }
     end)
 
+    PaymentsApiWeb.DataCase.setup_sandbox(tags)
+
+    :ok
+  end
+
+  setup _context do
     user1 = PaymentsFixtures.user_fixture(%{email: "test@email.com"})
 
     PaymentsFixtures.wallet_fixture(%{user_id: to_string(user1.id), currency: "BRL"})

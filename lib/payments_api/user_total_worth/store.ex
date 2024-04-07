@@ -9,11 +9,7 @@ defmodule PaymentsApi.UserTotalWorth.Store do
 
   def start_link(opts \\ []) do
     opts = Keyword.put_new(opts, :name, @default_name)
-
-    {:ok, supervisor} = Task.Supervisor.start_link()
-    state = Map.put(%{}, :supervisor, supervisor)
-
-    Agent.start_link(fn -> state end, opts)
+    Agent.start_link(fn -> %{} end, opts)
   end
 
   def get_user_by_worth_summary(agent \\ @default_name, user_id) do

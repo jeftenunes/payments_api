@@ -72,9 +72,11 @@ defmodule PaymentsApi.Payments do
             )
 
           {:ok, debit_op_result} =
-            %Transaction{}
-            |> Transaction.changeset(initial_debit_transaction_state)
-            |> Repo.insert()
+            Repo.transaction(fn ->
+              %Transaction{}
+              |> Transaction.changeset(initial_debit_transaction_state)
+              |> Repo.insert!()
+            end)
 
           initial_credit_transaction_state =
             Map.put(
@@ -83,10 +85,12 @@ defmodule PaymentsApi.Payments do
               debit_op_result.id
             )
 
-          credit_op_result =
-            %Transaction{}
-            |> Transaction.changeset(initial_credit_transaction_state)
-            |> Repo.insert()
+          {:ok, credit_op_result} =
+            Repo.transaction(fn ->
+              %Transaction{}
+              |> Transaction.changeset(initial_credit_transaction_state)
+              |> Repo.insert()
+            end)
 
           map_response({credit_op_result, wallets})
 
@@ -121,8 +125,13 @@ defmodule PaymentsApi.Payments do
       processing_results =
         case validation_result do
           {:valid, transaction} ->
-            {:ok, debit} = update_transaction_status(transaction, "PROCESSED")
-            {:ok, credit} = process_credit_transaction(transaction.id)
+            {:ok, {debit, credit}} =
+              Repo.transaction(fn ->
+                {:ok, debit} = update_transaction_status(transaction, "PROCESSED")
+                {:ok, credit} = process_credit_transaction(transaction.id)
+
+                {debit, credit}
+              end)
 
             {:processed, {debit, credit}}
 

@@ -1,7 +1,8 @@
 defmodule PaymentsApiWeb.TotalWorthChannel do
   use PaymentsApiWeb, :channel
 
-  def join("user_total_worth_updated", _payload, socket) do
+  def join("user_total_worth_updated:4", _payload, socket) do
+    IO.inspect("xxxx")
     {:ok, socket}
   end
 

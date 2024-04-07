@@ -1,8 +1,8 @@
 defmodule PaymentsApi.Payments.Currencies.ExchangeRatePollingTask do
   use Task
 
-  alias PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
   alias PaymentsApi.Payments.Currencies
+  alias PaymentsApi.Payments.Currencies.ExchangeRateStore
 
   @exchange_rate_cache_expiration_in_ms Application.compile_env(
                                           :payments_api,
@@ -11,12 +11,15 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRatePollingTask do
 
   @supported_currencies Application.compile_env(:payments_api, :supported_currencies)
 
-  def start_link() do
-    Process.sleep(@exchange_rate_cache_expiration_in_ms)
-
+  def start_link(_) do
     Task.start_link(fn ->
-      retrieve_exchange_rates()
+      schedule_exchange_rate_retrieval()
     end)
+  end
+
+  defp schedule_exchange_rate_retrieval() do
+    Process.sleep(@exchange_rate_cache_expiration_in_ms)
+    retrieve_exchange_rates()
   end
 
   defp retrieve_exchange_rates() do
@@ -27,11 +30,8 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRatePollingTask do
       end)
 
     exchange_rates = Enum.into(exchange_rates, %{})
-    ExchangeRateMonitorServer.update_exchange_rates(exchange_rates)
-
-    Process.sleep(@exchange_rate_cache_expiration_in_ms)
-
-    retrieve_exchange_rates()
+    ExchangeRateStore.update_exchange_rate(exchange_rates)
+    schedule_exchange_rate_retrieval()
   end
 
   defp fetch_rate_for_currency(from_currency, to_currencies) do
