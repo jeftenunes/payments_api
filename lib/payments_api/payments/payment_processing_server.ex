@@ -1,8 +1,8 @@
 defmodule PaymentsApi.Payments.PaymentProcessingServer do
   use GenServer
 
-  alias PaymentsApi.Payments
-  alias PaymentsApi.Payments.Currencies
+  alias PaymentsApi.UserTotalWorth
+  alias PaymentsApi.Payments.{Currencies, Transactions, Wallets}
 
   @default_name PaymentProcessingServer
 
@@ -28,10 +28,10 @@ defmodule PaymentsApi.Payments.PaymentProcessingServer do
 
   @impl true
   def handle_info(:process_pending_transactions, state) do
-    Payments.process_transaction()
+    Transactions.process_transaction()
     |> Enum.filter(fn {_k, v} -> v.status === "PROCESSED" end)
     |> Enum.each(fn {_k, processed} ->
-      usr = Payments.find_user_by_wallet_id_qry(processed.wallet_id)
+      usr = Wallets.find_user_by_wallet_id_qry(processed.wallet_id)
 
       publish_user_total_worth_updates(usr.id)
     end)
@@ -42,7 +42,10 @@ defmodule PaymentsApi.Payments.PaymentProcessingServer do
   defp publish_user_total_worth_updates(user_id) do
     user_total_worth =
       Enum.map(Currencies.get_supported_currencies(), fn {currency_key, _currency_infos} ->
-        Payments.retrieve_total_worth_for_user(%{id: user_id, currency: to_string(currency_key)})
+        UserTotalWorth.retrieve_total_worth_for_user(%{
+          id: user_id,
+          currency: to_string(currency_key)
+        })
       end)
 
     Absinthe.Subscription.publish(

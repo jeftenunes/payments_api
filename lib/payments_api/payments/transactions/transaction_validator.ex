@@ -1,6 +1,7 @@
-defmodule PaymentsApi.Payments.TransactionValidator do
-  alias PaymentsApi.Payments.{Transaction, Helpers.BalanceHelper}
+defmodule PaymentsApi.Payments.Transactions.TransactionValidator do
   alias PaymentsApi.Repo
+  alias PaymentsApi.Payments.Helpers.BalanceHelper
+  alias PaymentsApi.Payments.Transactions.Transaction
 
   def validate_transaction(nil), do: []
 

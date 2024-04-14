@@ -28,7 +28,7 @@ defmodule PaymentsApi.PaymentsFixtures do
     {:ok, transaction} =
       attrs
       |> Enum.into(%{})
-      |> PaymentsApi.Payments.create_transaction()
+      |> PaymentsApi.Payments.send_money()
 
     transaction
   end

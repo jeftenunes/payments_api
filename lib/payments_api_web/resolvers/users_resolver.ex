@@ -1,8 +1,8 @@
 defmodule PaymentsApiWeb.Resolvers.UsersResolver do
   use Absinthe.Schema.Notation
 
-  alias PaymentsApi.Payments
   alias PaymentsApiWeb.Resolvers.ErrorsHelper
+  alias PaymentsApi.{Payments, UserTotalWorth}
 
   def create_user(%{email: _email} = params, _) do
     case Payments.create_user(params) do
@@ -18,21 +18,15 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
   end
 
   def all_users(_, _) do
-    {:ok, Payments.list_users(%{})}
+    {:ok, Payments.all_users()}
   end
 
   def find_user_by(params, _) do
-    {:ok, Payments.get_user_by(%{email: params.email})}
+    {:ok, Payments.get_users_by_email(params.email)}
   end
 
   def find_user_total_worth_by(params, _) do
-    {:ok,
-     Payments.retrieve_total_worth_for_user(%{
-       id: params.user_id,
-       currency: params.currency
-     })}
-
-    case Payments.retrieve_total_worth_for_user(%{
+    case UserTotalWorth.retrieve_total_worth_for_user(%{
            id: params.user_id,
            currency: params.currency
          }) do

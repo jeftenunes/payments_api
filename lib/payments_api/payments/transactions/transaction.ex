@@ -1,5 +1,6 @@
-defmodule PaymentsApi.Payments.Transaction do
-  alias PaymentsApi.Payments.{Wallet, Transaction}
+defmodule PaymentsApi.Payments.Transactions.Transaction do
+  alias PaymentsApi.Payments.Wallets.Wallet
+  alias PaymentsApi.Payments.Transactions.Transaction
 
   use Ecto.Schema
 
@@ -19,6 +20,7 @@ defmodule PaymentsApi.Payments.Transaction do
   end
 
   @required_fields [:type, :amount, :wallet_id, :status, :exchange_rate]
+
   @available_fields [
     :type,
     :amount,

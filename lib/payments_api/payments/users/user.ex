@@ -1,15 +1,15 @@
-defmodule PaymentsApi.Payments.User do
+defmodule PaymentsApi.Payments.Users.User do
   use Ecto.Schema
 
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
-  alias PaymentsApi.Payments.{User, Wallet}
+  alias PaymentsApi.Payments.{Users.User, Wallets.Wallet}
 
   schema "users" do
     field :email, :string
 
-    has_many :wallets, PaymentsApi.Payments.Wallet
+    has_many :wallets, Wallet
 
     timestamps()
   end
