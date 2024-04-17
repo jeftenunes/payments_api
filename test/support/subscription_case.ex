@@ -10,7 +10,7 @@ defmodule PaymentsApiWeb.SubscriptionCase do
 
       setup do
         {:ok, socket} =
-          Phoenix.ChannelTest.connect(PaymentsApiWeb.Channels.PaymentsServerSocket, %{})
+          Phoenix.ChannelTest.connect(PaymentsApiWeb.PaymentsServerSocket, %{})
 
         {:ok, socket} = Absinthe.Phoenix.SubscriptionTest.join_absinthe(socket)
 

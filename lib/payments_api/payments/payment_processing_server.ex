@@ -28,13 +28,13 @@ defmodule PaymentsApi.Payments.PaymentProcessingServer do
 
   @impl true
   def handle_info(:process_pending_transactions, state) do
-    Transactions.process_transaction()
-    |> Enum.filter(fn {_k, v} -> v.status === "PROCESSED" end)
-    |> Enum.each(fn {_k, processed} ->
-      usr = Wallets.find_user_by_wallet_id_qry(processed.wallet_id)
+    # Transactions.process_transaction()
+    # |> Enum.filter(fn {_k, v} -> v.status === "PROCESSED" end)
+    # |> Enum.each(fn {_k, processed} ->
+    #   usr = Wallets.find_user_by_wallet_id_qry(processed.wallet_id)
 
-      publish_user_total_worth_updates(usr.id)
-    end)
+    #   publish_user_total_worth_updates(usr.id)
+    # end)
 
     {:noreply, state}
   end

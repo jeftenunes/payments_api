@@ -9,7 +9,9 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.ExchangeRate do
     end
 
     field :exchange_rates_updated, list_of(:configured_exchange_rates) do
-      config fn _args, _ -> {:ok, topic: "exchange_rates_updated"} end
+      config fn _args, _ctx ->
+        {:ok, topic: "exchange_rates_updated"}
+      end
     end
   end
 end
