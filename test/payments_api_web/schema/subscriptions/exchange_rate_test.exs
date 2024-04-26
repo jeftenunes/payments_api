@@ -2,7 +2,7 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.ExchangeRateTest do
   use PaymentsApiWeb.DataCase
   use PaymentsApiWeb.SubscriptionCase
 
-  alias PaymentsApi.{PaymentsFixtures, PaymentsHelpers}
+  alias PaymentsApi.PaymentsHelpers
 
   import Mox
 

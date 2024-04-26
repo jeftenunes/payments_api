@@ -18,7 +18,7 @@ defmodule PaymentsApi.Payments.Users do
     |> List.first()
   end
 
-  def user_exists(id),
+  def user_exists?(id),
     do: id |> User.build_exists_qry() |> Repo.exists?()
 
   def list_users(params) do

@@ -11,7 +11,7 @@ defmodule PaymentsApi.Payments.Wallets do
   def get_wallet(id), do: Repo.get!(Wallet, id)
 
   def create_wallet(%{user_id: user_id, currency: currency} = attrs) do
-    case {Users.user_exists(String.to_integer(user_id)), Currencies.supported?(currency)} do
+    case {Users.user_exists?(String.to_integer(user_id)), Currencies.supported?(currency)} do
       {true, true} ->
         {:ok, wallet} =
           attrs
