@@ -18,7 +18,6 @@ defmodule PaymentsApi.Application do
       {Finch, name: PaymentsApi.Finch},
       # Start the Endpoint (http/https)
       PaymentsApiWeb.Endpoint,
-      PaymentsApi.UserTotalWorth.Store,
       PaymentsApi.Payments.Currencies.ExchangeRateStore,
       {Absinthe.Subscription, PaymentsApiWeb.Endpoint},
       PaymentsApi.Payments.PaymentProcessingServer,
