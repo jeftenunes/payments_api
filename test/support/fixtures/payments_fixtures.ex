@@ -4,10 +4,16 @@ defmodule PaymentsApi.PaymentsFixtures do
   entities via the `PaymentsApi.Payments` context.
   """
 
-  @doc """
-  Generate a wallet.
-  """
-  def wallet_fixture(attrs \\ %{}) do
+  def user_fixture(%{email: _email} = attrs) do
+    {:ok, user} =
+      attrs
+      |> Enum.into(%{})
+      |> PaymentsApi.Payments.create_user()
+
+    user
+  end
+
+  def wallet_fixture(%{user_id: _user_id, currency: _currency} = attrs) do
     {:ok, wallet} =
       attrs
       |> Enum.into(%{})
@@ -16,27 +22,14 @@ defmodule PaymentsApi.PaymentsFixtures do
     wallet
   end
 
-  @doc """
-  Generate a transaction.
-  """
-  def transaction_fixture(attrs \\ %{}) do
+  def transaction_fixture(
+        %{amount: "2", source: "5", recipient: "4", description: "brl -> USD"} = attrs
+      ) do
     {:ok, transaction} =
       attrs
       |> Enum.into(%{})
-      |> PaymentsApi.Payments.create_transaction()
+      |> PaymentsApi.Payments.send_money()
 
     transaction
-  end
-
-  @doc """
-  Generate a user.
-  """
-  def user_fixture(attrs \\ %{}) do
-    {:ok, user} =
-      attrs
-      |> Enum.into(%{})
-      |> PaymentsApi.Payments.create_user()
-
-    user
   end
 end

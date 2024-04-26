@@ -5,10 +5,10 @@ defmodule PaymentsApiWeb.Schema.Mutations.Wallets do
 
   object :wallets_mutations do
     field :create_wallet, :wallet do
-      arg(:user_id, non_null(:id))
-      arg(:currency, non_null(:string))
+      arg :user_id, non_null(:id)
+      arg :currency, non_null(:string)
 
-      resolve(&WalletsResolver.create_wallet/2)
+      resolve &WalletsResolver.create_wallet/2
     end
   end
 end

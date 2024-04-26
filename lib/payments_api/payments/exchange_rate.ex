@@ -1,9 +1,9 @@
 defmodule PaymentsApi.Payments.ExchangeRate do
   alias PaymentsApi.Payments.Parsers.MoneyParser
-  alias PaymentsApi.Payments.Currencies.ExchangeRateMonitorServer
+  alias PaymentsApi.Payments.Currencies.ExchangeRateStore
 
   def parse_exchange_rate(exchange_rate) do
-    exchange_rate |> String.to_float()
+    String.to_float(exchange_rate)
   end
 
   def parse_exchange_rate_to_db(exchange_rate) do
@@ -11,13 +11,12 @@ defmodule PaymentsApi.Payments.ExchangeRate do
   end
 
   def retrieve_exchange_rate(from_currency, to_currency) do
-    do_retrieve_exchange_rate(from_currency, to_currency)
-  end
+    case ExchangeRateStore.get_rate_for_currency(from_currency, to_currency) do
+      {:error, reason} ->
+        {:error, reason}
 
-  defp do_retrieve_exchange_rate(from_currency, to_currency) do
-    case ExchangeRateMonitorServer.get_rate_for_currency(from_currency, to_currency) do
-      {:error, reason} -> {:error, reason}
-      exchange_rate -> exchange_rate.exchange_rate
+      exchange_rate ->
+        exchange_rate.exchange_rate
     end
   end
 end

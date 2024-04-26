@@ -32,7 +32,7 @@ defmodule PaymentsApiWeb.ConnCase do
   end
 
   setup tags do
-    PaymentsApi.DataCase.setup_sandbox(tags)
+    PaymentsApiWeb.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

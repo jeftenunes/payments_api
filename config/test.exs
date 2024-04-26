@@ -31,3 +31,9 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+config :payments_api,
+  exchange_rate_cache_expiration_in_seconds: 2,
+  supported_currencies: [:CAD, :BRL, :USD],
+  alpha_vantage_api_key: "SWV5BYTB8NODLZP8",
+  alpha_vantage_api_url: "http://localhost:4001/query"

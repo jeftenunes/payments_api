@@ -12,7 +12,7 @@ defmodule PaymentsApiWeb.Endpoint do
     same_site: "Lax"
   ]
 
-  socket "/socket", PaymentsApiWeb.Channels.PaymentsServerSocket,
+  socket "/socket", PaymentsApiWeb.PaymentsServerSocket,
     websocket: true,
     longpoll: false
 

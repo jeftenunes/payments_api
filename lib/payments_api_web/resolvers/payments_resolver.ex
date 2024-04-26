@@ -5,7 +5,7 @@ defmodule PaymentsApiWeb.Resolvers.PaymentsResolver do
   alias PaymentsApiWeb.Resolvers.ErrorsHelper
 
   def send_money(%{} = params, _) do
-    case Payments.create_transaction(params) do
+    case Payments.send_money(params) do
       {:ok, transaction} ->
         {:ok, transaction}
 

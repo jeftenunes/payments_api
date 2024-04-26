@@ -1,4 +1,9 @@
-defmodule PaymentsApi.Payments.Currencies.ApiWrapper do
+defmodule PaymentsApi.Payments.Currencies.AlphaVantageApiClient do
+  @moduledoc false
+
+  @callback fetch(map :: map()) :: list()
+  @callback fetch(map :: map()) :: tuple()
+
   @qry_param_function "CURRENCY_EXCHANGE_RATE"
   @api_response_root_node "Realtime Currency Exchange Rate"
   @api_key Application.compile_env(:payments_api, :alpha_vantage_api_key)
@@ -17,7 +22,8 @@ defmodule PaymentsApi.Payments.Currencies.ApiWrapper do
          headers: _headers
        }) do
     raw_response =
-      Jason.decode!(body)
+      body
+      |> Jason.decode!()
       |> Map.get(@api_response_root_node)
 
     %{
@@ -31,7 +37,8 @@ defmodule PaymentsApi.Payments.Currencies.ApiWrapper do
   end
 
   defp send_request(query_params) do
-    Finch.build(:get, build_encoded_url(query_params))
+    :get
+    |> Finch.build(build_encoded_url(query_params))
     |> Finch.request(PaymentsApi.Finch)
   end
 

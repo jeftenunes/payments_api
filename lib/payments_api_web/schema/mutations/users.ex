@@ -5,9 +5,9 @@ defmodule PaymentsApiWeb.Schema.Mutations.Users do
 
   object :users_mutations do
     field :create_user, :user do
-      arg(:email, :string)
+      arg :email, :string
 
-      resolve(&UsersResolver.create_user/2)
+      resolve &UsersResolver.create_user/2
     end
   end
 end

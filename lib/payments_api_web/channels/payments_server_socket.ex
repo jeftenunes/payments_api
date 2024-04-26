@@ -1,13 +1,12 @@
-defmodule PaymentsApiWeb.Channels.PaymentsServerSocket do
+defmodule PaymentsApiWeb.PaymentsServerSocket do
   use Phoenix.Socket
   use Absinthe.Phoenix.Socket, schema: PaymentsApiWeb.Schema
 
-  channel "exchange_rate_updated", schema: PaymentsApiWeb.CurrenciesChannel
-  channel "user_total_worth_updated", schema: PaymentsApiWeb.TotalWorthChannel
-
-  def connect(_params, socket, _connection_info) do
+  @impl true
+  def connect(_params, socket) do
     {:ok, socket}
   end
 
+  @impl true
   def id(_socket), do: nil
 end

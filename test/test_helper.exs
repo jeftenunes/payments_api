@@ -1,2 +1,11 @@
 ExUnit.start()
-Ecto.Adapters.SQL.Sandbox.mode(PaymentsApi.Repo, :manual)
+
+Mox.defmock(MockAlphaVantageApiClient,
+  for: PaymentsApi.Payments.Currencies.AlphaVantageApiClient
+)
+
+Application.put_env(
+  :payments_api,
+  :alpha_vantage_api_client,
+  MockAlphaVantageApiClient
+)

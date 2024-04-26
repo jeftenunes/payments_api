@@ -14,12 +14,10 @@ defmodule PaymentsApi.Payments.Helpers.BalanceHelper do
   end
 
   def parse_amount(amount) do
-    amount
-    |> MoneyParser.maybe_parse_amount_from_integer()
+    MoneyParser.parse_amount_from_integer(amount)
   end
 
   defp build_amount_value(amount_from_db) do
-    amount_from_db
-    |> MoneyParser.maybe_parse_amount_from_integer()
+    MoneyParser.parse_amount_from_integer(amount_from_db)
   end
 end

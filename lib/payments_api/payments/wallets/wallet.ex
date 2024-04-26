@@ -1,7 +1,7 @@
-defmodule PaymentsApi.Payments.Wallet do
+defmodule PaymentsApi.Payments.Wallets.Wallet do
   use Ecto.Schema
 
-  alias PaymentsApi.Payments.{Wallet, User}
+  alias PaymentsApi.Payments.{Wallets.Wallet, Users.User}
 
   import Ecto.Query, warn: false
   import Ecto.Changeset
@@ -9,7 +9,7 @@ defmodule PaymentsApi.Payments.Wallet do
   schema "wallets" do
     field :currency, :string
 
-    belongs_to(:user, PaymentsApi.Payments.User)
+    belongs_to :user, User
 
     timestamps()
   end

@@ -1,5 +1,5 @@
 defmodule PaymentsApi.Payments.Currencies do
-  alias PaymentsApi.Payments.Currencies.ApiWrapper
+  alias PaymentsApi.Payments.Currencies.AlphaVantageApiClient
 
   @currencies %{
     AED: %{name: "UAE Dirham", symbol: "د.إ", exponent: 2, number: 784},
@@ -224,7 +224,7 @@ defmodule PaymentsApi.Payments.Currencies do
   def all, do: @currencies
 
   @spec find_by(currency :: String.t()) :: map
-  def find_by(currency) when is_bitstring(currency) do
+  def find_by(currency) when is_binary(currency) do
     currency |> get_currency_atom() |> find_by()
   end
 
@@ -233,33 +233,29 @@ defmodule PaymentsApi.Payments.Currencies do
     Map.filter(@currencies, fn {key, _value} -> key === currency end)
   end
 
-  @spec is_supported?(currency :: String.t()) :: boolean
-  def is_supported?(currency) when is_bitstring(currency) do
-    currency |> get_currency_atom() |> is_supported?()
+  @spec supported?(currency :: String.t()) :: boolean
+  def supported?(currency) when is_binary(currency) do
+    currency |> get_currency_atom() |> supported?()
   end
 
-  @spec is_supported?(currency_key :: atom) :: boolean
-  def is_supported?(currency_key) do
+  @spec supported?(currency_key :: atom) :: boolean
+  def supported?(currency_key) do
     Map.has_key?(get_supported_currencies(), currency_key)
   end
 
   @spec fetch_exchange_rate_from_api(from_currency :: String.t(), to_currency :: String.t()) ::
           map()
-  def fetch_exchange_rate_from_api(from_currency, to_currency) do
-    with response <- ApiWrapper.fetch(%{from_currency: from_currency, to_currency: to_currency}) do
-      response
-    end
-  end
+  def fetch_exchange_rate_from_api(from_currency, to_currency),
+    do: api_client().fetch(%{from_currency: from_currency, to_currency: to_currency})
 
   @spec get_currency_atom(currency_str :: String.t()) :: atom()
   def get_currency_atom(currency_str) do
-    try do
-      String.to_existing_atom(currency_str)
-    rescue
-      _e in ArgumentError -> nil
-    end
+    String.to_existing_atom(currency_str)
+  rescue
+    _e in ArgumentError -> nil
   end
 
+  @spec get_supported_currencies() :: map()
   def get_supported_currencies do
     are_supported_currencies_values =
       Enum.all?(@supported_currencies, fn currency ->
@@ -269,7 +265,11 @@ defmodule PaymentsApi.Payments.Currencies do
     if not are_supported_currencies_values,
       do: raise("Invalid currency configuration")
 
-    @supported_currencies
-    |> Enum.reduce(%{}, fn curr, acc -> Map.put(acc, curr, @currencies[curr]) end)
+    Enum.reduce(@supported_currencies, %{}, fn curr, acc ->
+      Map.put(acc, curr, @currencies[curr])
+    end)
   end
+
+  defp api_client,
+    do: Application.get_env(:payments_api, :alpha_vantage_api_client, AlphaVantageApiClient)
 end

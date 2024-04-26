@@ -5,21 +5,20 @@ defmodule PaymentsApiWeb.Schema.Queries.Users do
 
   object :users_queries do
     field :user, :user do
-      arg(:id, non_null(:id))
-      arg(:currency, :string)
+      arg :email, non_null(:string)
 
-      resolve(&UsersResolver.find_user_by/2)
+      resolve &UsersResolver.find_user_by/2
     end
 
     field :users, list_of(:user) do
-      resolve(&UsersResolver.all_users/2)
+      resolve &UsersResolver.all_users/2
     end
 
     field :total_worth, :total_worth do
-      arg(:user_id, non_null(:id))
-      arg(:currency, non_null(:string))
+      arg :user_id, non_null(:id)
+      arg :currency, non_null(:string)
 
-      resolve(&UsersResolver.find_user_total_worth_by/2)
+      resolve &UsersResolver.find_user_total_worth_by/2
     end
   end
 end
