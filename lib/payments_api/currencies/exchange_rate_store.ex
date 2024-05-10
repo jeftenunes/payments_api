@@ -1,4 +1,4 @@
-defmodule PaymentsApi.Payments.Currencies.ExchangeRateStore do
+defmodule PaymentsApi.Currencies.ExchangeRateStore do
   use Agent
 
   alias PaymentsApi.Payments.Currencies

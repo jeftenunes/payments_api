@@ -1,5 +1,5 @@
-defmodule PaymentsApi.Payments.Currencies do
-  alias PaymentsApi.Payments.Currencies.AlphaVantageApiClient
+defmodule PaymentsApi.Currencies do
+  alias PaymentsApi.Currencies.ExchangeRateStore
 
   @currencies %{
     AED: %{name: "UAE Dirham", symbol: "د.إ", exponent: 2, number: 784},
@@ -243,10 +243,12 @@ defmodule PaymentsApi.Payments.Currencies do
     Map.has_key?(get_supported_currencies(), currency_key)
   end
 
-  @spec fetch_exchange_rate_from_api(from_currency :: String.t(), to_currency :: String.t()) ::
-          map()
-  def fetch_exchange_rate_from_api(from_currency, to_currency),
-    do: api_client().fetch(%{from_currency: from_currency, to_currency: to_currency})
+  @spec retrieve_rate_for_currency(
+          from_currency :: String.t(),
+          to_currency :: String.t()
+        ) :: list()
+  def retrieve_rate_for_currency(from_currency, to_currency),
+    do: ExchangeRateStore.get_rate_for_currency(from_currency, to_currency)
 
   @spec get_currency_atom(currency_str :: String.t()) :: atom()
   def get_currency_atom(currency_str) do
@@ -269,7 +271,4 @@ defmodule PaymentsApi.Payments.Currencies do
       Map.put(acc, curr, @currencies[curr])
     end)
   end
-
-  defp api_client,
-    do: Application.get_env(:payments_api, :alpha_vantage_api_client, AlphaVantageApiClient)
 end

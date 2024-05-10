@@ -50,7 +50,9 @@ defmodule PaymentsApi.MixProject do
       {:absinthe_plug, "~> 1.5"},
       {:absinthe_phoenix, "~> 2.0"},
       {:mox, "~> 0.5.0", only: :test},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:ecto_shorts, "~> 2.3"},
+      {:dataloader, "~> 2.0.0"}
     ]
   end
 

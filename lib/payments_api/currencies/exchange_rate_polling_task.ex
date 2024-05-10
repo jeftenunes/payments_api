@@ -1,8 +1,8 @@
-defmodule PaymentsApi.Payments.Currencies.ExchangeRatePollingTask do
+defmodule PaymentsApi.Currencies.ExchangeRatePollingTask do
   use Task
 
-  alias PaymentsApi.Payments.Currencies
-  alias PaymentsApi.Payments.Currencies.ExchangeRateStore
+  alias PaymentsApi.Currencies.ExchangeRateStore
+  alias PaymentsApi.Currencies.AlphaVantageApiClient
 
   @exchange_rate_cache_expiration_in_ms Application.compile_env(
                                           :payments_api,
@@ -36,8 +36,14 @@ defmodule PaymentsApi.Payments.Currencies.ExchangeRatePollingTask do
 
   defp fetch_rate_for_currency(from_currency, to_currencies) do
     ratings_for_currency =
-      Enum.map(to_currencies, &Currencies.fetch_exchange_rate_from_api(from_currency, &1))
+      Enum.map(
+        to_currencies,
+        &api_client().fetch(%{from_currency: from_currency, to_currency: &1})
+      )
 
     {from_currency, ratings_for_currency}
   end
+
+  defp api_client,
+    do: Application.get_env(:payments_api, :alpha_vantage_api_client, AlphaVantageApiClient)
 end
