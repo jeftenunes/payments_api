@@ -8,12 +8,12 @@ defmodule PaymentsApi.Repo.Migrations.CreateTransactions do
       add :amount, :integer
       add :description, :string
       add :exchange_rate, :integer
-      add :origin_transaction_id, :integer
-      add :wallet_id, references(:wallets, on_delete: :nothing)
+      add :source_wallet_id, :integer
+      add :recipient_wallet_id, references(:wallets, on_delete: :nothing)
 
       timestamps()
     end
 
-    create index(:transactions, [:wallet_id])
+    create index(:transactions, [:recipient_wallet_id])
   end
 end

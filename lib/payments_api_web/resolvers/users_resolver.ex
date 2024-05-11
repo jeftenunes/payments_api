@@ -14,4 +14,8 @@ defmodule PaymentsApiWeb.Resolvers.UsersResolver do
   def all_users(_, _) do
     Accounts.all_users()
   end
+
+  def retrieve_user_total_worth_by(params, _) do
+    Accounts.retrieve_user_total_worth(params)
+  end
 end

@@ -1,5 +1,8 @@
 defmodule PaymentsApi.Payments do
-  @moduledoc """
-  The Payments context.
-  """
+  alias EctoShorts.Actions
+  alias PaymentsApi.Payments.Transaction
+
+  def create_transaction(%{} = params) do
+    Actions.create(Transaction, params)
+  end
 end

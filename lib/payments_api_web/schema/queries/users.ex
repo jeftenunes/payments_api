@@ -18,7 +18,7 @@ defmodule PaymentsApiWeb.Schema.Queries.Users do
       arg :user_id, non_null(:id)
       arg :currency, non_null(:string)
 
-      resolve &UsersResolver.find_user_total_worth_by/2
+      resolve &UsersResolver.retrieve_user_total_worth_by/2
     end
   end
 end

@@ -243,10 +243,9 @@ defmodule PaymentsApi.Currencies do
     Map.has_key?(get_supported_currencies(), currency_key)
   end
 
-  @spec retrieve_rate_for_currency(
-          from_currency :: String.t(),
-          to_currency :: String.t()
-        ) :: list()
+  def retrieve_rate_for_currency(from_currency, to_currency) when from_currency === to_currency,
+    do: %{exchange_rate: 1.0}
+
   def retrieve_rate_for_currency(from_currency, to_currency),
     do: ExchangeRateStore.get_rate_for_currency(from_currency, to_currency)
 

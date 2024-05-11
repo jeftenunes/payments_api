@@ -1,8 +1,6 @@
 defmodule PaymentsApi.Payments.Transaction do
   use Ecto.Schema
 
-  alias PaymentsApi.Accounts.Wallet
-
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
@@ -12,20 +10,28 @@ defmodule PaymentsApi.Payments.Transaction do
     field :amount, :integer
     field :description, :string
     field :exchange_rate, :integer
-
-    belongs_to :wallet, Wallet
+    field :source_wallet_id, :integer
+    field :recipient_wallet_id, :integer
 
     timestamps()
   end
 
-  @required_fields [:type, :amount, :status, :exchange_rate]
+  @required_fields [
+    :type,
+    :amount,
+    :status,
+    :exchange_rate,
+    :recipient_wallet_id
+  ]
 
   @available_fields [
     :type,
     :amount,
     :status,
     :description,
-    :exchange_rate
+    :exchange_rate,
+    :source_wallet_id,
+    :recipient_wallet_id
   ]
 
   @doc false

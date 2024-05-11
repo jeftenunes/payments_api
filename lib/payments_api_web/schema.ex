@@ -38,4 +38,15 @@ defmodule PaymentsApiWeb.Schema do
     import_fields :user_worth_subscriptions
     import_fields :exchange_rate_subscriptions
   end
+
+  def context(ctx) do
+    source = Dataloader.Ecto.new(PaymentsApi.Repo)
+    dataloader = Dataloader.add_source(Dataloader.new(), PaymentsApi.Accounts, source)
+
+    Map.put(ctx, :loader, dataloader)
+  end
+
+  def plugins do
+    [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
+  end
 end

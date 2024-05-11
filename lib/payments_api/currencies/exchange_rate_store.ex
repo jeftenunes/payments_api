@@ -1,7 +1,7 @@
 defmodule PaymentsApi.Currencies.ExchangeRateStore do
   use Agent
 
-  alias PaymentsApi.Payments.Currencies
+  alias PaymentsApi.Currencies
 
   @default_name ExchangeRateStore
 
