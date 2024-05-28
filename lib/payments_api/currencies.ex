@@ -246,8 +246,12 @@ defmodule PaymentsApi.Currencies do
   def retrieve_rate_for_currency(from_currency, to_currency) when from_currency === to_currency,
     do: %{exchange_rate: 1.0}
 
-  def retrieve_rate_for_currency(from_currency, to_currency),
-    do: ExchangeRateStore.get_rate_for_currency(from_currency, to_currency)
+  def retrieve_rate_for_currency(from_currency, to_currency) do
+    %{exchange_rate: exchange_rate} =
+      ExchangeRateStore.get_rate_for_currency(from_currency, to_currency)
+
+    %{exchange_rate: exchange_rate}
+  end
 
   @spec get_currency_atom(currency_str :: String.t()) :: atom()
   def get_currency_atom(currency_str) do

@@ -8,10 +8,9 @@ defmodule PaymentsApi.Payments.Transaction do
     field :type, :string
     field :status, :string
     field :amount, :integer
+    field :wallet_id, :integer
     field :description, :string
-    field :exchange_rate, :integer
-    field :source_wallet_id, :integer
-    field :recipient_wallet_id, :integer
+    field :exchange_rate, :float
 
     timestamps()
   end
@@ -20,18 +19,16 @@ defmodule PaymentsApi.Payments.Transaction do
     :type,
     :amount,
     :status,
-    :exchange_rate,
-    :recipient_wallet_id
+    :exchange_rate
   ]
 
   @available_fields [
     :type,
     :amount,
     :status,
+    :wallet_id,
     :description,
-    :exchange_rate,
-    :source_wallet_id,
-    :recipient_wallet_id
+    :exchange_rate
   ]
 
   @doc false
@@ -39,5 +36,16 @@ defmodule PaymentsApi.Payments.Transaction do
     transaction
     |> cast(attrs, @available_fields)
     |> validate_required(@required_fields)
+  end
+
+  def build_load_wallet_transaction(wallet_id) do
+    %{
+      type: "CREDIT",
+      amount: 10000,
+      exchange_rate: 1,
+      status: "PROCESSED",
+      wallet_id: wallet_id,
+      description: "WALLET LOAD"
+    }
   end
 end
