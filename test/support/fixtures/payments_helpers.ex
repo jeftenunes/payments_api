@@ -25,24 +25,24 @@ defmodule PaymentsApi.PaymentsHelpers do
     end
   end
 
-  defp value({:USD, :BRL}, 1), do: "0.22"
-  defp value({:BRL, :USD}, 1), do: "4.5"
-  defp value({:USD, :CAD}, 1), do: "0.8"
-  defp value({:CAD, :USD}, 1), do: "1.2"
-  defp value({:BRL, :CAD}, 1), do: "4.0"
-  defp value({:CAD, :BRL}, 1), do: "0.25"
+  defp value({:USD, :BRL}, 1), do: 0.22
+  defp value({:BRL, :USD}, 1), do: 4.5
+  defp value({:USD, :CAD}, 1), do: 0.8
+  defp value({:CAD, :USD}, 1), do: 1.2
+  defp value({:BRL, :CAD}, 1), do: 4.0
+  defp value({:CAD, :BRL}, 1), do: 0.25
 
-  defp value({:USD, :BRL}, 2), do: "0.2"
-  defp value({:BRL, :USD}, 2), do: "4.2"
-  defp value({:USD, :CAD}, 2), do: "1.0"
-  defp value({:CAD, :USD}, 2), do: "1.2"
-  defp value({:BRL, :CAD}, 2), do: "4.0"
-  defp value({:CAD, :BRL}, 2), do: "0.30"
+  defp value({:USD, :BRL}, 2), do: 0.2
+  defp value({:BRL, :USD}, 2), do: 4.2
+  defp value({:USD, :CAD}, 2), do: 1.0
+  defp value({:CAD, :USD}, 2), do: 1.2
+  defp value({:BRL, :CAD}, 2), do: 4.0
+  defp value({:CAD, :BRL}, 2), do: 0.30
 
-  defp value({:USD, :BRL}, 3), do: "0.1"
-  defp value({:BRL, :USD}, 3), do: "4.7"
-  defp value({:USD, :CAD}, 3), do: "1.6"
-  defp value({:CAD, :USD}, 3), do: "1.3"
-  defp value({:BRL, :CAD}, 3), do: "4.1"
-  defp value({:CAD, :BRL}, 3), do: "0.35"
+  defp value({:USD, :BRL}, 3), do: 0.1
+  defp value({:BRL, :USD}, 3), do: 4.7
+  defp value({:USD, :CAD}, 3), do: 1.6
+  defp value({:CAD, :USD}, 3), do: 1.3
+  defp value({:BRL, :CAD}, 3), do: 4.1
+  defp value({:CAD, :BRL}, 3), do: 0.35
 end

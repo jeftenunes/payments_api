@@ -1,7 +1,7 @@
 defmodule PaymentsApi.Currencies.AlphaVantageApiClient do
-  @moduledoc false
+  @behaviour PaymentsApi.Currencies.AlphaVantageApiClient
 
-  @callback fetch(map :: map()) :: list()
+  @callback fetch(map :: map()) :: map()
   @callback fetch(map :: map()) :: tuple()
 
   @qry_param_function "CURRENCY_EXCHANGE_RATE"

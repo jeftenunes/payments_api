@@ -10,13 +10,12 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
   @send_money_doc """
     mutation SendMoney($amount: String!, $description: String, $recipient: ID!, $source: ID!) {
       sendMoney(amount: $amount, description: $description, recipient: $recipient, source: $source) {
+        id,
         amount,
-        status,
-        source,
-        recipient,
         toCurrency,
         description,
-        fromCurrency
+        fromCurrency,
+        exchangeRate
       }
     }
   """
@@ -39,6 +38,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
         }
       end)
 
+      Process.sleep(5000)
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
 
       wallet1 =
@@ -49,26 +49,28 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       wallet2 =
         PaymentsFixtures.wallet_fixture(%{user_id: to_string(user2.id), currency: "USD"})
 
-      Process.sleep(5000)
-
       # act
       assert {:ok, %{data: data}} =
                Absinthe.run(
                  @send_money_doc,
                  PaymentsApiWeb.Schema,
                  variables: %{
-                   "amount" => "200",
+                   "amount" => "2000",
                    "source" => wallet2.id,
                    "recipient" => wallet1.id,
                    "description" => "test transaction"
                  }
                )
 
-      assert data["sendMoney"]["amount"] === "24000"
-      assert data["sendMoney"]["status"] === "PENDING"
-      assert data["sendMoney"]["toCurrency"] === "USD"
-      assert data["sendMoney"]["fromCurrency"] === "CAD"
-      assert data["sendMoney"]["description"] === "test transaction"
+      assert %{
+               "sendMoney" => %{
+                 "amount" => "24.0",
+                 "description" => "test transaction",
+                 "exchangeRate" => "1.2",
+                 "fromCurrency" => "USD",
+                 "toCurrency" => "CAD"
+               }
+             } = data
     end
 
     test "should send money from one wallet to another - same currencies" do
@@ -105,8 +107,6 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       wallet2 =
         PaymentsFixtures.wallet_fixture(%{user_id: to_string(user2.id), currency: "BRL"})
 
-      Process.sleep(5000)
-
       # act
 
       assert {:ok, %{data: data}} =
@@ -121,11 +121,21 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
                  }
                )
 
-      assert data["sendMoney"]["amount"] === "20000"
-      assert data["sendMoney"]["status"] === "PENDING"
-      assert data["sendMoney"]["toCurrency"] === "BRL"
-      assert data["sendMoney"]["fromCurrency"] === "BRL"
-      assert data["sendMoney"]["description"] === "test transaction"
+      assert %{
+               "sendMoney" => %{
+                 "amount" => "24000",
+                 "status" => "PROCESSED",
+                 "toCurrency" => "BRL",
+                 "fromCurrency" => "BRL",
+                 "description" => "test transaction"
+               }
+             } = data
+
+      # assert data["sendMoney"]["amount"] === "20000"
+      # assert data["sendMoney"]["status"] === "PENDING"
+      # assert data["sendMoney"]["toCurrency"] === "BRL"
+      # assert data["sendMoney"]["fromCurrency"] === "BRL"
+      # assert data["sendMoney"]["description"] === "test transaction"
     end
 
     test "should not send money from one wallet to another - different currencies and alpha vantage api in error" do
@@ -160,8 +170,6 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
 
       wallet2 =
         PaymentsFixtures.wallet_fixture(%{user_id: to_string(user2.id), currency: "USD"})
-
-      Process.sleep(5000)
 
       # act
       assert {:ok, %{data: _data, errors: errors}} =

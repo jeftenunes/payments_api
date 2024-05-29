@@ -62,8 +62,6 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       wallet2 =
         PaymentsFixtures.wallet_fixture(%{user_id: to_string(user2.id), currency: "USD"})
 
-      Process.sleep(5000)
-
       # act
       ref =
         push_doc(socket, @user_total_worth_updated,
@@ -98,8 +96,6 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
                  }
                }
              } = reply
-
-      Process.sleep(1000)
 
       usr1_id = to_string(user1.id)
       assert_push "subscription:data", data
@@ -147,8 +143,6 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       wallet2 =
         PaymentsFixtures.wallet_fixture(%{user_id: to_string(user2.id), currency: "USD"})
 
-      Process.sleep(5000)
-
       # act
       ref =
         push_doc(socket, @user_total_worth_updated,
@@ -162,7 +156,7 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       ref =
         push_doc(socket, @send_money_doc,
           variables: %{
-            "amount" => "50",
+            "amount" => "5000",
             "source" => wallet2.id,
             "recipient" => wallet1.id,
             "description" => "test transaction"
@@ -183,8 +177,6 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
                  }
                }
              } = reply
-
-      Process.sleep(1000)
 
       usr2_id = to_string(user2.id)
       assert_push "subscription:data", data

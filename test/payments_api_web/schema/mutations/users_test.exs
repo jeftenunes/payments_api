@@ -40,8 +40,15 @@ defmodule PaymentsApiWeb.Schema.Mutations.UsersTest do
 
       # assert
       assert data["createdUser"] == nil
+
       # Yes, I know in real world we must not return "Emaill already taken".
-      assert List.first(errors)[:message] === "E-mail already taken"
+      assert [
+               %{
+                 message: "E-mail already taken",
+                 path: ["createUser"],
+                 locations: [%{line: 2, column: 5}]
+               }
+             ] = errors
     end
   end
 end

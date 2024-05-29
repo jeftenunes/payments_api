@@ -1,7 +1,7 @@
 ExUnit.start()
 
 Mox.defmock(MockAlphaVantageApiClient,
-  for: PaymentsApi.Payments.Currencies.AlphaVantageApiClient
+  for: PaymentsApi.Currencies.AlphaVantageApiClient
 )
 
 Application.put_env(

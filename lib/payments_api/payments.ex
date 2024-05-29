@@ -7,65 +7,81 @@ defmodule PaymentsApi.Payments do
   def send_money(%{} = attrs) do
     source_id = String.to_integer(attrs.source)
     recipient_id = String.to_integer(attrs.recipient)
+    transaction_amount = String.to_integer(attrs.amount)
 
-    # validate source balance
-    # create transactions
+    with {:ok, {source, recipient}} <-
+           retrieve_wallets_involved_in_transaction(source_id, recipient_id),
+         :ok <- validate_source_wallet_balance(source_id, transaction_amount) do
+      %{exchange_rate: exchange_rate} =
+        retrieve_rate_for_currency(source.currency, recipient.currency)
 
+      transaction_amount_rate_applied = transaction_amount * exchange_rate / 100
+
+      debit_transaction =
+        build_transaction(%{
+          type: "DEBIT",
+          exchange_rate: 1,
+          status: "PROCESSED",
+          wallet_id: source.id,
+          amount: transaction_amount,
+          description: attrs.description
+        })
+
+      credit_transaction =
+        build_transaction(%{
+          type: "CREDIT",
+          status: "PROCESSED",
+          wallet_id: recipient.id,
+          amount: transaction_amount,
+          exchange_rate: exchange_rate,
+          description: attrs.description
+        })
+
+      op_result =
+        {:ok, _credit_transaction} =
+        Repo.transaction(fn ->
+          _debit_transaction_op = Actions.create(Transaction, debit_transaction)
+          {:ok, credit_transaction} = Actions.create(Transaction, credit_transaction)
+
+          %{
+            id: credit_transaction.id,
+            exchange_rate: exchange_rate,
+            from_currency: source.currency,
+            to_currency: recipient.currency,
+            amount: transaction_amount_rate_applied,
+            description: credit_transaction.description
+          }
+        end)
+
+      Accounts.publish_user_total_worth_updates(source.user_id)
+      Accounts.publish_user_total_worth_updates(recipient.user_id)
+
+      op_result
+    end
+  end
+
+  defp retrieve_wallets_involved_in_transaction(source_id, recipient_id) do
     case {Accounts.get_wallet_by(%{id: source_id}), Accounts.get_wallet_by(%{id: recipient_id})} do
       {{:ok, source}, {:ok, recipient}} ->
-        # VALIDAR O SALDO ANTES DE TRANSFERIR
-        IO.inspect(Accounts.calculate_balance_for_wallet(source.id))
-
-        %{exchange_rate: exchange_rate} =
-          retrieve_rate_for_currency(source.currency, recipient.currency)
-
-        transaction_amount = String.to_integer(attrs.amount)
-
-        debit_transaction =
-          build_transaction(%{
-            type: "DEBIT",
-            exchange_rate: 1,
-            status: "PROCESSED",
-            wallet_id: source.id,
-            amount: transaction_amount,
-            description: attrs.description
-          })
-
-        credit_transaction =
-          build_transaction(%{
-            type: "CREDIT",
-            status: "PROCESSED",
-            wallet_id: recipient.id,
-            amount: transaction_amount,
-            exchange_rate: exchange_rate,
-            description: attrs.description
-          })
-
-        op_result =
-          {:ok, _credit_transaction} =
-          Repo.transaction(fn ->
-            _debit_transaction_op = Actions.create(Transaction, debit_transaction)
-            {:ok, credit_transaction} = Actions.create(Transaction, credit_transaction)
-
-            %{
-              id: credit_transaction.id,
-              exchange_rate: exchange_rate,
-              description: credit_transaction.description,
-              amount: transaction_amount * exchange_rate / 100,
-              from_currency: source.currency,
-              to_currency: recipient.currency
-            }
-          end)
-
-        Accounts.publish_user_total_worth_updates(source.user_id)
-        Accounts.publish_user_total_worth_updates(recipient.user_id)
-        op_result
+        {:ok, {source, recipient}}
 
       {{:error, message}, _} ->
         {:error, "source: #{message}"}
 
       {_, {:error, message}} ->
         {:error, "recipient: #{message}"}
+    end
+  end
+
+  defp validate_source_wallet_balance(source_id, transaction_amount) do
+    source_wallet_balance = Accounts.calculate_balance_for_wallet(source_id)
+
+    case source_wallet_balance > transaction_amount do
+      true ->
+        :ok
+
+      false ->
+        {:error, "insufficient balance"}
     end
   end
 

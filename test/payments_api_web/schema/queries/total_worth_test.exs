@@ -44,27 +44,31 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  variables: %{"userId" => usr.id, "currency" => "CAD"}
                )
 
-      assert data["totalWorth"]["totalWorth"] === "100.00"
+      assert %{
+               "totalWorth" => %{
+                 "totalWorth" => "100.0"
+               }
+             } = data
     end
 
     test "should retrieve user correct total worth after creating a wallet - exchange rate applied" do
       # arrange
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: to_currency,
-                                                   from_currency: from_currency
-                                                 } = _params ->
-        %{
-          bid_price: "1.50",
-          ask_price: "2.10",
-          to_currency: to_string(to_currency),
-          exchange_rate:
-            PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
-          from_currency: to_string(from_currency),
-          last_refreshed: DateTime.now!("Etc/UTC")
-        }
-      end)
+      # stub(MockAlphaVantageApiClient, :fetch, fn %{
+      #                                              to_currency: to_currency,
+      #                                              from_currency: from_currency
+      #                                            } = _params ->
+      #   %{
+      #     bid_price: "1.50",
+      #     ask_price: "2.10",
+      #     to_currency: to_string(to_currency),
+      #     exchange_rate:
+      #       PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
+      #     from_currency: to_string(from_currency),
+      #     last_refreshed: DateTime.now!("Etc/UTC")
+      #   }
+      # end)
 
-      Process.sleep(5000)
+      # Process.sleep(5000)
       usr = PaymentsFixtures.user_fixture(%{email: "total_worth_test@test.com"})
 
       PaymentsFixtures.wallet_fixture(%{user_id: to_string(usr.id), currency: "CAD"})
@@ -78,8 +82,12 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  variables: %{"userId" => usr.id, "currency" => "USD"}
                )
 
-      assert data["totalWorth"]["currency"] === "USD"
-      assert data["totalWorth"]["totalWorth"] === "102.00"
+      assert %{
+               "totalWorth" => %{
+                 "currency" => "USD",
+                 "totalWorth" => "102.0"
+               }
+             } = data
     end
 
     test "should retrieve user correct total worth after processing a transaction - exchange rate applied" do
@@ -130,8 +138,12 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  variables: %{"userId" => usr1.id, "currency" => "CAD"}
                )
 
-      assert data["totalWorth"]["currency"] === "CAD"
-      assert data["totalWorth"]["totalWorth"] === "106.25"
+      assert %{
+               "totalWorth" => %{
+                 "currency" => "CAD",
+                 "totalWorth" => "100.25"
+               }
+             } = data
 
       assert {:ok, %{data: data}} =
                Absinthe.run(
@@ -140,8 +152,12 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  variables: %{"userId" => usr2.id, "currency" => "BRL"}
                )
 
-      assert data["totalWorth"]["currency"] === "BRL"
-      assert data["totalWorth"]["totalWorth"] === "75.00"
+      assert %{
+               "totalWorth" => %{
+                 "currency" => "BRL",
+                 "totalWorth" => "99.75"
+               }
+             } = data
     end
   end
 end

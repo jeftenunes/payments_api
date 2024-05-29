@@ -43,7 +43,6 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.ExchangeRateTest do
 
       # assert
       assert_reply ref, :ok, %{subscriptionId: subscription_id}
-      Process.sleep(5000)
 
       assert_push "subscription:data", data
 
@@ -95,7 +94,6 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.ExchangeRateTest do
 
       # assert
       assert_reply ref, :ok, %{subscriptionId: subscription_id}
-      Process.sleep(5000)
 
       assert_push "subscription:data", data
 

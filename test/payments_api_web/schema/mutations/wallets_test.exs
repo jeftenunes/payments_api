@@ -46,7 +46,13 @@ defmodule PaymentsApiWeb.Schema.Mutations.WalletsTest do
                )
 
       # assert
-      assert List.first(errors)[:message] === "Currencies not supported"
+      assert [
+               %{
+                 message: "Currency not supported",
+                 path: ["createWallet"],
+                 locations: [%{line: 2, column: 5}]
+               }
+             ] = errors
     end
   end
 end
