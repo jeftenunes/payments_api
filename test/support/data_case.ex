@@ -16,9 +16,7 @@ defmodule PaymentsApiWeb.DataCase do
 
   use ExUnit.CaseTemplate
 
-  import Mox
-
-  alias PaymentsApi.{PaymentsFixtures, PaymentsHelpers}
+  alias PaymentsApi.PaymentsFixtures
 
   using do
     quote do

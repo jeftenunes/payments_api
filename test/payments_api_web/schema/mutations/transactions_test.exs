@@ -23,22 +23,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
   describe "@sendMoney" do
     test "should send money from one wallet to another - different currencies" do
       # arrange
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: to_currency,
-                                                   from_currency: from_currency
-                                                 } = _params ->
-        %{
-          bid_price: "1.50",
-          ask_price: "2.10",
-          to_currency: to_string(to_currency),
-          exchange_rate:
-            PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
-          from_currency: to_string(from_currency),
-          last_refreshed: DateTime.now!("Etc/UTC")
-        }
-      end)
 
-      Process.sleep(5000)
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
 
       wallet1 =
@@ -76,26 +61,26 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
     test "should send money from one wallet to another - same currencies" do
       # arrange
 
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: _to_currency,
-                                                   from_currency: _from_currency
-                                                 } = _params ->
-        {:error,
-         %{
-           CAD: [
-             error: "error retrieving exchange rate",
-             error: "error retrieving exchange rate"
-           ],
-           BRL: [
-             error: "error retrieving exchange rate",
-             error: "error retrieving exchange rate"
-           ],
-           USD: [
-             error: "error retrieving exchange rate",
-             error: "error retrieving exchange rate"
-           ]
-         }}
-      end)
+      # stub(MockAlphaVantageApiClient, :fetch, fn %{
+      #                                              to_currency: _to_currency,
+      #                                              from_currency: _from_currency
+      #                                            } = _params ->
+      #   {:error,
+      #    %{
+      #      CAD: [
+      #        error: "error retrieving exchange rate",
+      #        error: "error retrieving exchange rate"
+      #      ],
+      #      BRL: [
+      #        error: "error retrieving exchange rate",
+      #        error: "error retrieving exchange rate"
+      #      ],
+      #      USD: [
+      #        error: "error retrieving exchange rate",
+      #        error: "error retrieving exchange rate"
+      #      ]
+      #    }}
+      # end)
 
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
 
@@ -140,25 +125,23 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
 
     test "should not send money from one wallet to another - different currencies and alpha vantage api in error" do
       # arrange
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: _to_currency,
-                                                   from_currency: _from_currency
-                                                 } = _params ->
-        {:error,
-         %{
-           CAD: [
-             error: "error retrieving exchange rate",
-             error: "error retrieving exchange rate"
-           ],
-           BRL: [
-             error: "error retrieving exchange rate",
-             error: "error retrieving exchange rate"
-           ],
-           USD: [
-             error: "error retrieving exchange rate",
-             error: "error retrieving exchange rate"
-           ]
-         }}
+      stub(PaymentsApi.Currencies.ExchangeRateStoreMock, :get_rate_for_currency, fn
+        _to_currency, _from_currency ->
+          {:error,
+           %{
+             CAD: [
+               error: "error retrieving exchange rate",
+               error: "error retrieving exchange rate"
+             ],
+             BRL: [
+               error: "error retrieving exchange rate",
+               error: "error retrieving exchange rate"
+             ],
+             USD: [
+               error: "error retrieving exchange rate",
+               error: "error retrieving exchange rate"
+             ]
+           }}
       end)
 
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
@@ -190,20 +173,20 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
 
     test "should not send money from one wallet to another - invalid amount" do
       # arrange
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: to_currency,
-                                                   from_currency: from_currency
-                                                 } = _params ->
-        %{
-          bid_price: "1.50",
-          ask_price: "2.10",
-          to_currency: to_string(to_currency),
-          exchange_rate:
-            PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
-          from_currency: to_string(from_currency),
-          last_refreshed: DateTime.now!("Etc/UTC")
-        }
-      end)
+      # stub(MockAlphaVantageApiClient, :fetch, fn %{
+      #                                              to_currency: to_currency,
+      #                                              from_currency: from_currency
+      #                                            } = _params ->
+      #   %{
+      #     bid_price: "1.50",
+      #     ask_price: "2.10",
+      #     to_currency: to_string(to_currency),
+      #     exchange_rate:
+      #       PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
+      #     from_currency: to_string(from_currency),
+      #     last_refreshed: DateTime.now!("Etc/UTC")
+      #   }
+      # end)
 
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
 
@@ -215,7 +198,7 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
       wallet2 =
         PaymentsFixtures.wallet_fixture(%{user_id: to_string(user2.id), currency: "USD"})
 
-      Process.sleep(5000)
+      # Process.sleep(5000)
 
       # act
       assert {:ok, %{data: _data, errors: errors}} =

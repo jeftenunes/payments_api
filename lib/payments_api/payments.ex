@@ -11,10 +11,9 @@ defmodule PaymentsApi.Payments do
 
     with {:ok, {source, recipient}} <-
            retrieve_wallets_involved_in_transaction(source_id, recipient_id),
-         :ok <- validate_source_wallet_balance(source_id, transaction_amount) do
-      %{exchange_rate: exchange_rate} =
-        retrieve_rate_for_currency(source.currency, recipient.currency)
-
+         :ok <- validate_source_wallet_balance(source_id, transaction_amount),
+         %{exchange_rate: exchange_rate} <-
+           retrieve_rate_for_currency(source.currency, recipient.currency) do
       transaction_amount_rate_applied = transaction_amount * exchange_rate / 100
 
       debit_transaction =

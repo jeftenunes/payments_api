@@ -1,6 +1,4 @@
 defmodule PaymentsApi.Currencies do
-  alias PaymentsApi.Currencies.ExchangeRateStore
-
   @currencies %{
     AED: %{name: "UAE Dirham", symbol: "د.إ", exponent: 2, number: 784},
     AFN: %{name: "Afghani", symbol: "؋", exponent: 2, number: 971},
@@ -218,6 +216,7 @@ defmodule PaymentsApi.Currencies do
     ZWL: %{name: "Zimbabwe Dollar", symbol: "$", exponent: 2, number: 932}
   }
 
+  @exchange_rate_store Application.compile_env(:payments_api, :exchange_rate_store)
   @supported_currencies Application.compile_env(:payments_api, :supported_currencies)
 
   @spec all() :: map
@@ -247,10 +246,10 @@ defmodule PaymentsApi.Currencies do
     do: %{exchange_rate: 1.0}
 
   def retrieve_rate_for_currency(from_currency, to_currency) do
-    %{exchange_rate: exchange_rate} =
-      ExchangeRateStore.get_rate_for_currency(from_currency, to_currency)
-
-    %{exchange_rate: exchange_rate}
+    case @exchange_rate_store.get_rate_for_currency(from_currency, to_currency) do
+      %{exchange_rate: exchange_rate} -> %{exchange_rate: exchange_rate}
+      {:error, message} -> {:error, message}
+    end
   end
 
   @spec get_currency_atom(currency_str :: String.t()) :: atom()
