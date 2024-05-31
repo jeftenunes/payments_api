@@ -81,7 +81,7 @@ defmodule PaymentsApi.Accounts do
       {{:ok, _user}, true} ->
         usr_total_worth = UserTotalWorth.retrieve_user_total_worth(params)
 
-        {:ok, usr_total_worth}
+        build_user_total_worth_result(usr_total_worth)
 
       {{:error, message}, _} ->
         {:error, message}
@@ -105,6 +105,14 @@ defmodule PaymentsApi.Accounts do
       user_total_worth,
       user_total_worth_updated: "user_total_worth_updated:#{user_id}"
     )
+  end
+
+  defp build_user_total_worth_result({:error, message}) do
+    {:error, message}
+  end
+
+  defp build_user_total_worth_result(usr_total_worth) do
+    {:ok, usr_total_worth}
   end
 
   defdelegate calculate_balance_for_wallet(wallet_id), to: UserTotalWorth

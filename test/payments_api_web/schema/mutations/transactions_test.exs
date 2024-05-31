@@ -61,25 +61,9 @@ defmodule PaymentsApiWeb.Schema.Mutations.TransactionsTest do
     test "should send money from one wallet to another - same currencies" do
       # arrange
 
-      # stub(MockAlphaVantageApiClient, :fetch, fn %{
-      #                                              to_currency: _to_currency,
-      #                                              from_currency: _from_currency
-      #                                            } = _params ->
-      #   {:error,
-      #    %{
-      #      CAD: [
-      #        error: "error retrieving exchange rate",
-      #        error: "error retrieving exchange rate"
-      #      ],
-      #      BRL: [
-      #        error: "error retrieving exchange rate",
-      #        error: "error retrieving exchange rate"
-      #      ],
-      #      USD: [
-      #        error: "error retrieving exchange rate",
-      #        error: "error retrieving exchange rate"
-      #      ]
-      #    }}
+      # stub(PaymentsApi.Currencies.ExchangeRateStoreMock, :get_rate_for_currency, fn
+      #   "agent", to_currency, from_currency ->
+      #     {:error, "MESSAGE"}
       # end)
 
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})

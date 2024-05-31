@@ -9,11 +9,7 @@ defmodule PaymentsApi.Accounts.UserTotalWorth do
 
     user_total_worth_amount = calculate_total_worth(usr_transactions, params.currency)
 
-    %{
-      user_id: params.user_id,
-      currency: params.currency,
-      total_worth: "#{user_total_worth_amount / 10000}"
-    }
+    maybe_build_user_total_worth_result(params, user_total_worth_amount)
   end
 
   def calculate_balance_for_wallet(wallet_id) do
@@ -29,26 +25,45 @@ defmodule PaymentsApi.Accounts.UserTotalWorth do
   end
 
   defp calculate_total_worth(transactions, currency) do
-    converted_transactions = apply_exchange_rate(transactions, currency)
+    converted_transactions = maybe_apply_exchange_rate(transactions, currency)
 
-    Enum.reduce(converted_transactions, 0, fn t, acc ->
-      sum_amount_of(t, acc)
+    with %{type: _type} <- List.first(converted_transactions) do
+      Enum.reduce(converted_transactions, 0, fn t, acc ->
+        sum_amount_of(t, acc)
+      end)
+    else
+      _ -> List.first(converted_transactions)
+    end
+  end
+
+  defp maybe_apply_exchange_rate(transactions, to_currency) do
+    Enum.map(transactions, fn transaction ->
+      case Currencies.retrieve_rate_for_currency(transaction.currency, to_currency) do
+        %{exchange_rate: exchange_rate} ->
+          %{
+            type: transaction.type,
+            to_currency: to_currency,
+            exchange_rate: exchange_rate,
+            from_currency: transaction.currency,
+            amount: transaction.amount * exchange_rate * 100
+          }
+
+        {:error, messages} ->
+          {:error, messages}
+      end
     end)
   end
 
-  defp apply_exchange_rate(transactions, to_currency) do
-    Enum.map(transactions, fn transaction ->
-      %{exchange_rate: exchange_rate} =
-        Currencies.retrieve_rate_for_currency(transaction.currency, to_currency)
+  defp maybe_build_user_total_worth_result(_params, {:error, _message} = error) do
+    error
+  end
 
-      %{
-        type: transaction.type,
-        to_currency: to_currency,
-        exchange_rate: exchange_rate,
-        from_currency: transaction.currency,
-        amount: transaction.amount * exchange_rate * 100
-      }
-    end)
+  defp maybe_build_user_total_worth_result(params, user_total_worth_amount) do
+    %{
+      user_id: params.user_id,
+      currency: params.currency,
+      total_worth: "#{user_total_worth_amount / 10000}"
+    }
   end
 
   defp sum_amount_of(%{type: type} = transaction, acc) when type === "CREDIT",
