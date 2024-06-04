@@ -1,4 +1,6 @@
 defmodule PaymentsApi.Currencies.ExchangeRateStore do
+  @behaviour PaymentsApi.Currencies.ExchangeRateStoreBehaviour
+
   use Agent
 
   alias PaymentsApi.Currencies
@@ -10,8 +12,8 @@ defmodule PaymentsApi.Currencies.ExchangeRateStore do
     Agent.start_link(fn -> %{exchange_rates: %{}} end, opts)
   end
 
-  def get_rate_for_currency(agent \\ @default_name, from_currency, to_currency) do
-    Agent.get(agent, fn state ->
+  def get_rate_for_currency(from_currency, to_currency) do
+    Agent.get(@default_name, fn state ->
       Map.get(state, :exchange_rates)[Currencies.get_currency_atom(from_currency)]
       |> Enum.filter(fn currency_rate -> filter_exchange_rates(currency_rate, to_currency) end)
       |> List.first()

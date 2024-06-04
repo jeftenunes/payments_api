@@ -23,7 +23,7 @@ config :payments_api, PaymentsApiWeb.Endpoint,
 # In test we don't send emails.
 config :payments_api, PaymentsApi.Mailer, adapter: Swoosh.Adapters.Test
 
-config :payments_api, exchange_rate_store: PaymentsApi.Currencies.ExchangeRateStoreMock
+config :payments_api, exchange_rate_store: ExchangeRateStoreMock
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false

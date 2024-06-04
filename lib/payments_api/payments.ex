@@ -7,9 +7,9 @@ defmodule PaymentsApi.Payments do
   def send_money(%{} = attrs) do
     source_id = String.to_integer(attrs.source)
     recipient_id = String.to_integer(attrs.recipient)
-    transaction_amount = String.to_integer(attrs.amount)
 
-    with {:ok, {source, recipient}} <-
+    with {:ok, transaction_amount} <- maybe_parse_amount_from_params_to_integer(attrs.amount),
+         {:ok, {source, recipient}} <-
            retrieve_wallets_involved_in_transaction(source_id, recipient_id),
          :ok <- validate_source_wallet_balance(source_id, transaction_amount),
          %{exchange_rate: exchange_rate} <-
@@ -93,6 +93,13 @@ defmodule PaymentsApi.Payments do
       description: params.description,
       exchange_rate: params.exchange_rate
     }
+  end
+
+  defp maybe_parse_amount_from_params_to_integer(amount_str) do
+    case Integer.parse(amount_str) do
+      :error -> {:error, "invalid amount"}
+      {amount, _} -> {:ok, amount}
+    end
   end
 
   defdelegate retrieve_rate_for_currency(from_currency, to_currency), to: Currencies
