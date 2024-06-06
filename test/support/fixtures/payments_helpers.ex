@@ -1,6 +1,6 @@
 defmodule PaymentsApi.PaymentsHelpers do
   @moduledoc false
-  def mock_exchange_rate_by_currency({to_currency, from_currency} = currencies) do
+  def mock_exchange_rate_by_currency({to_currency, from_currency} = _currencies) do
     case {to_currency, from_currency} do
       {"USD", "BRL"} -> value({"USD", "BRL"}, 1)
       {"BRL", "USD"} -> value({"BRL", "USD"}, 1)
@@ -16,12 +16,12 @@ defmodule PaymentsApi.PaymentsHelpers do
         variation
       ) do
     case {to_currency, from_currency} do
-      {"USD", "BRL"} -> value({"USD", "BRL"}, variation)
-      {"BRL", "USD"} -> value({"BRL", "USD"}, variation)
-      {"USD", "CAD"} -> value({"USD", "CAD"}, variation)
-      {"CAD", "USD"} -> value({"CAD", "USD"}, variation)
-      {"BRL", "CAD"} -> value({"BRL", "CAD"}, variation)
-      {"CAD", "BRL"} -> value({"CAD", "BRL"}, variation)
+      {:USD, :BRL} -> value({"USD", "BRL"}, variation)
+      {:BRL, :USD} -> value({"BRL", "USD"}, variation)
+      {:USD, :CAD} -> value({"USD", "CAD"}, variation)
+      {:CAD, :USD} -> value({"CAD", "USD"}, variation)
+      {:BRL, :CAD} -> value({"BRL", "CAD"}, variation)
+      {:CAD, :BRL} -> value({"CAD", "BRL"}, variation)
     end
   end
 

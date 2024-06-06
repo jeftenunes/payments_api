@@ -11,13 +11,12 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
   @send_money_doc """
     mutation SendMoney($amount: String!, $description: String, $recipient: ID!, $source: ID!) {
       sendMoney(amount: $amount, description: $description, recipient: $recipient, source: $source) {
+        id,
         amount,
-        status,
-        source,
-        recipient,
         toCurrency,
         description,
-        fromCurrency
+        fromCurrency,
+        exchangeRate
       }
     }
   """
@@ -37,19 +36,12 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       socket: socket
     } do
       # arrange
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: to_currency,
-                                                   from_currency: from_currency
-                                                 } = _params ->
-        %{
-          bid_price: "1.50",
-          ask_price: "2.10",
-          to_currency: to_string(to_currency),
-          exchange_rate:
-            PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
-          from_currency: to_string(from_currency),
-          last_refreshed: DateTime.now!("Etc/UTC")
-        }
+      stub(ExchangeRateStoreMock, :get_rate_for_currency, fn
+        to_currency, from_currency ->
+          %{
+            exchange_rate:
+              PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency})
+          }
       end)
 
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
@@ -88,11 +80,11 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       assert %{
                data: %{
                  "sendMoney" => %{
-                   "amount" => "6000",
-                   "status" => "PENDING",
-                   "toCurrency" => "USD",
-                   "fromCurrency" => "CAD",
-                   "description" => "test transaction"
+                   "amount" => "0.4",
+                   "description" => "test transaction",
+                   "exchangeRate" => "0.8",
+                   "fromCurrency" => "USD",
+                   "toCurrency" => "CAD"
                  }
                }
              } = reply
@@ -104,9 +96,9 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
                result: %{
                  data: %{
                    "userTotalWorthUpdated" => [
-                     %{"currency" => "CAD", "totalWorth" => "60.00", "userId" => usr1_id},
-                     %{"currency" => "BRL", "totalWorth" => "225.00", "userId" => usr1_id},
-                     %{"currency" => "USD", "totalWorth" => "50.00", "userId" => usr1_id}
+                     %{"currency" => "CAD", "totalWorth" => "79.6", "userId" => usr1_id},
+                     %{"currency" => "BRL", "totalWorth" => "21.89", "userId" => usr1_id},
+                     %{"currency" => "USD", "totalWorth" => "99.5", "userId" => usr1_id}
                    ]
                  }
                },
@@ -118,19 +110,12 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       socket: socket
     } do
       # arrange
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: to_currency,
-                                                   from_currency: from_currency
-                                                 } = _params ->
-        %{
-          bid_price: "1.50",
-          ask_price: "2.10",
-          to_currency: to_string(to_currency),
-          exchange_rate:
-            PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
-          from_currency: to_string(from_currency),
-          last_refreshed: DateTime.now!("Etc/UTC")
-        }
+      stub(ExchangeRateStoreMock, :get_rate_for_currency, fn
+        to_currency, from_currency ->
+          %{
+            exchange_rate:
+              PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency})
+          }
       end)
 
       user1 = PaymentsFixtures.user_fixture(%{email: "usr1@test.com"})
@@ -169,11 +154,10 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
       assert %{
                data: %{
                  "sendMoney" => %{
-                   "amount" => "6000",
-                   "status" => "PENDING",
-                   "toCurrency" => "USD",
-                   "fromCurrency" => "CAD",
-                   "description" => "test transaction"
+                   "amount" => "40.0",
+                   "description" => "test transaction",
+                   "fromCurrency" => "USD",
+                   "toCurrency" => "CAD"
                  }
                }
              } = reply
@@ -185,9 +169,9 @@ defmodule PaymentsApiWeb.Schema.Subscriptions.UserTotalWorthTest do
                result: %{
                  data: %{
                    "userTotalWorthUpdated" => [
-                     %{"currency" => "CAD", "totalWorth" => "60.00", "userId" => usr2_id},
-                     %{"currency" => "BRL", "totalWorth" => "225.00", "userId" => usr2_id},
-                     %{"currency" => "USD", "totalWorth" => "50.00", "userId" => usr2_id}
+                     %{"currency" => "CAD", "totalWorth" => "40.0", "userId" => usr1_id},
+                     %{"currency" => "BRL", "totalWorth" => "11.0", "userId" => usr1_id},
+                     %{"currency" => "USD", "totalWorth" => "50.0", "userId" => usr1_id}
                    ]
                  }
                },

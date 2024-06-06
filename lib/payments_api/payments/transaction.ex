@@ -41,7 +41,7 @@ defmodule PaymentsApi.Payments.Transaction do
   def build_load_wallet_transaction(wallet_id) do
     %{
       type: "CREDIT",
-      amount: 10000,
+      amount: 10_000,
       exchange_rate: 1,
       status: "PROCESSED",
       wallet_id: wallet_id,

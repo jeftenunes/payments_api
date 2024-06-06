@@ -53,22 +53,15 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
 
     test "should retrieve user correct total worth after creating a wallet - exchange rate applied" do
       # arrange
-      # stub(MockAlphaVantageApiClient, :fetch, fn %{
-      #                                              to_currency: to_currency,
-      #                                              from_currency: from_currency
-      #                                            } = _params ->
-      #   %{
-      #     bid_price: "1.50",
-      #     ask_price: "2.10",
-      #     to_currency: to_string(to_currency),
-      #     exchange_rate:
-      #       PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
-      #     from_currency: to_string(from_currency),
-      #     last_refreshed: DateTime.now!("Etc/UTC")
-      #   }
-      # end)
 
-      # Process.sleep(5000)
+      stub(ExchangeRateStoreMock, :get_rate_for_currency, fn
+        to_currency, from_currency ->
+          %{
+            exchange_rate:
+              PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency})
+          }
+      end)
+
       usr = PaymentsFixtures.user_fixture(%{email: "total_worth_test@test.com"})
 
       PaymentsFixtures.wallet_fixture(%{user_id: to_string(usr.id), currency: "CAD"})
@@ -85,26 +78,19 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
       assert %{
                "totalWorth" => %{
                  "currency" => "USD",
-                 "totalWorth" => "102.0"
+                 "totalWorth" => "570.0"
                }
              } = data
     end
 
     test "should retrieve user correct total worth after processing a transaction - exchange rate applied" do
       # arrange
-      stub(MockAlphaVantageApiClient, :fetch, fn %{
-                                                   to_currency: to_currency,
-                                                   from_currency: from_currency
-                                                 } = _params ->
-        %{
-          bid_price: "1.50",
-          ask_price: "2.10",
-          to_currency: to_string(to_currency),
-          exchange_rate:
-            PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency}),
-          from_currency: to_string(from_currency),
-          last_refreshed: DateTime.now!("Etc/UTC")
-        }
+      stub(ExchangeRateStoreMock, :get_rate_for_currency, fn
+        to_currency, from_currency ->
+          %{
+            exchange_rate:
+              PaymentsHelpers.mock_exchange_rate_by_currency({to_currency, from_currency})
+          }
       end)
 
       usr1 = PaymentsFixtures.user_fixture(%{email: "total_worth_test1@test.com"})
@@ -113,8 +99,6 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
 
       usr2 = PaymentsFixtures.user_fixture(%{email: "total_worth_test@test.com"})
       wallet2 = PaymentsFixtures.wallet_fixture(%{user_id: to_string(usr2.id), currency: "BRL"})
-
-      Process.sleep(5000)
 
       assert {:ok, %{data: _data}} =
                Absinthe.run(
@@ -128,8 +112,6 @@ defmodule PaymentsApiWeb.Schema.Queries.TotalWorthTest do
                  }
                )
 
-      # wait processing server to pass
-      Process.sleep(5000)
       # act
       assert {:ok, %{data: data}} =
                Absinthe.run(

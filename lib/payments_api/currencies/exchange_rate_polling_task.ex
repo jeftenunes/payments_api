@@ -17,12 +17,12 @@ defmodule PaymentsApi.Currencies.ExchangeRatePollingTask do
     end)
   end
 
-  defp schedule_exchange_rate_retrieval() do
+  defp schedule_exchange_rate_retrieval do
     Process.sleep(@exchange_rate_cache_expiration_in_ms)
     retrieve_exchange_rates()
   end
 
-  defp retrieve_exchange_rates() do
+  defp retrieve_exchange_rates do
     exchange_rates =
       Enum.map(@supported_currencies, fn currency ->
         currencies_to_compare = Enum.filter(@supported_currencies, &(&1 !== currency))

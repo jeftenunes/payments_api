@@ -36,7 +36,7 @@ defmodule PaymentsApiWeb.DataCase do
   end
 
   setup _context do
-    # stub(MockAlphaVantageApiClient, :fetch, fn %{
+    # stub(AlphaVantageApiClientMock, :fetch, fn %{
     #                                              to_currency: to_currency,
     #                                              from_currency: from_currency
     #                                            } = _params ->

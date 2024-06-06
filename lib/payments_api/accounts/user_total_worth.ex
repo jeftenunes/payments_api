@@ -27,12 +27,14 @@ defmodule PaymentsApi.Accounts.UserTotalWorth do
   defp calculate_total_worth(transactions, currency) do
     converted_transactions = maybe_apply_exchange_rate(transactions, currency)
 
-    with %{type: _type} <- List.first(converted_transactions) do
-      Enum.reduce(converted_transactions, 0, fn t, acc ->
-        sum_amount_of(t, acc)
-      end)
-    else
-      _ -> List.first(converted_transactions)
+    case List.first(converted_transactions) do
+      %{type: _type} ->
+        Enum.reduce(converted_transactions, 0, fn t, acc ->
+          sum_amount_of(t, acc)
+        end)
+
+      _ ->
+        List.first(converted_transactions)
     end
   end
 

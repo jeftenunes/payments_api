@@ -1,4 +1,7 @@
 defmodule PaymentsApi.Currencies.AlphaVantageApiClient do
+  @callback fetch(map :: map()) :: list()
+  @callback fetch(map :: map()) :: tuple()
+
   @qry_param_function "CURRENCY_EXCHANGE_RATE"
   @api_response_root_node "Realtime Currency Exchange Rate"
   @api_key Application.compile_env(:payments_api, :alpha_vantage_api_key)
